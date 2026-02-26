@@ -5,14 +5,14 @@ Repositório destinado às aulas teóricas e às atividades práticas da discipl
 Para acompanhar a disciplina, você precisará das seguintes ferramentas:
 | Ferramenta | O que é? | Recomendação |
 | :--- | :--- | :--- |
-| Editor de código | Ambiente onde você escreverá seu código. | [Visual Studio Code](https://code.visualstudio.com/) | 
-| Compilador | Responsável por transformar o código em programa. | **Windows:** [w64devkit](https://github.com/skeeto/w64devkit/releases) <br> **Linux/macOS:** gcc/clang (já incluso) |
-| Versionador | Controla e registra o histórico de alterações do código. | [Git](https://git-scm.com/) |
+| **Editor de código** | Ambiente onde você escreverá seu código (HTML, CSS, JS, JSX). | [Visual Studio Code](https://code.visualstudio.com/) | 
+| **Ambiente de Execução** | Necessário para rodar o servidor de desenvolvimento e gerenciar pacotes (npm). | [Node.js (versão LTS)](https://nodejs.org/pt-br/) |
+| **Versionador** | Controla e registra o histórico de alterações do código. | [Git](https://git-scm.com/) |
 
 ## 📂 Estrutura de Pastas
 Este repositório está organizado da seguinte forma:
-- **aulas/**: Contém os códigos utilizados nas aulas teóricas.
-- **praticas/**: Contém os códigos das atividades práticas.
+- **`aulas/`**: Contém os códigos e exemplos utilizados nas aulas teóricas.
+- **`praticas/`**: Contém os códigos das atividades práticas desenvolvidas pelos alunos.
 
 ## 🚀 Fluxo de Trabalho Acadêmico
 As atividades seguem o fluxo de trabalho baseado no modelo [GitFlow](https://www.atlassian.com/br/git/tutorials/comparing-workflows/gitflow-workflow).
@@ -41,7 +41,23 @@ Para cada nova atividade, siga o fluxo abaixo:
 > ⚠️ **Atenção!**<br>
 > Se o check ✅ não aparecer no `Pull Request`, há erros de compilação ou sintaxe que precisam ser corrigidos.
 
-### 3. Feedback e Avaliação
-Envie o link do seu `Pull Request` pela plataforma de ensino. A avaliação do código será feita usando o sistema de **Code Review**:
-- **Approve (Aprovado)**: Seu código cumpre os requisitos e o "Check" está verde.
-- **Request Changes (Solicitação de Ajustes)**: Foram encontrados pontos de melhoria ou erros. Você deve corrigir na sua máquina, fazer o push e avisar no comentário do PR para uma nova revisão.
+### 3. **Instale as dependências e rode o projeto:** Ao acessar a pasta de um projeto React, instale os pacotes necessários e inicie o servidor local:
+```bash
+npm install
+npm run dev   # ou npm start, dependendo de como o projeto foi criado
+```
+
+### 4. **Desenvolva e teste:** Implemente os arquivos solicitados na pasta da prática e verifique no navegador se tudo está funcionando corretamente.
+
+### 5. **Envie para o GitHub:** Salve suas alterações, crie os commits e envie para o seu repositório:
+```bash
+git add .
+git commit -m "Feat: Finaliza a implementação da Prática XX"
+git push origin feature/praticaXX
+```
+
+### 6. Feedback e Avaliação
+Envie o link do seu `Pull Request` pela plataforma de ensino da instituição. A avaliação do código será feita usando o sistema de **Code Review**:
+- **Approve (Aprovado):** Seu código cumpre os requisitos solicitados.
+- **Request Changes (Solicitação de Ajustes):** Foram encontrados pontos de melhoria, bugs ou erros de sintaxe. Você deve corrigir na sua máquina, fazer um novo commit+push na mesma branch e avisar no comentário do PR para uma nova revisão.
+
