@@ -1,0 +1,159 @@
+:root {
+    --primary: #000130;      /* Azul escuro */
+    --secondary: rgba(45, 57, 128, 0.692);    /* Azul mais claro */
+    --neutral: #1f2050;      /* Fundo escuro */
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Open Sans', sans-serif;
+    background-color: var(--neutral);
+}
+
+/* HEADER */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+    background-color: var(--primary);
+    color: white;
+}
+
+.logo {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 26px;
+    font-weight: bold;
+}
+
+.cart {
+    position: relative;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.cart-count {
+    position: absolute;
+    top: -10px;
+    right: -15px;
+    background-color: var(--secondary);
+    padding: 4px 8px;
+    border-radius: 50%;
+    font-size: 12px;
+}
+
+/* HERO */
+.hero {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 320px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    text-align: center;
+}
+
+.hero h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 34px;
+    width: 60%;
+}
+
+/* TÍTULO DO CATÁLOGO */
+.catalog-title {
+    text-align: center;
+    padding: 40px 0 10px;
+    color: white;
+}
+
+.catalog-title h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 28px;
+}
+
+/* PRODUTOS */
+.products {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 25px;
+    padding: 50px;
+    justify-content: center;
+}
+
+/* CARD */
+.card {
+    display: flex;
+    flex-direction: column;
+    width: 260px;
+    padding: 20px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+    transition: 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+/* IMAGEM */
+.card img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.card h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: var(--primary);
+}
+
+.old-price {
+    text-decoration: line-through;
+    color: rgb(139, 139, 139);
+}
+
+.price {
+    color: var(--secondary);
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 15px;
+}
+
+.card button {
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    background-color: var(--primary);
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+    margin-top: auto;
+}
+
+.card button:hover {
+    background-color: var(--secondary);
+}
+
+/* FOOTER */
+.footer {
+    background-color: var(--primary);
+    color: white;
+    text-align: center;
+    padding: 25px;
+}
+
+.social a {
+    color: var(--secondary);
+    margin: 0 10px;
+    text-decoration: none;
+}
