@@ -1,101 +1,210 @@
-# 🎨 Estruturando o Tema e CSS Global da Aplicação
+# 🏷️ Tipagem de Props com TypeScript e Adição de Ícones
 
-Chegou a hora de sairmos dos exemplos básicos de "Hello World" e começarmos a
-montar a estrutura real da nossa aplicação! Nesta aula, preparamos a fundação do
-nosso visual criando um sistema de cores com variáveis CSS e aplicando um
-_Reset_ global para padronizar o layout.
-
----
-
-## 🌈 1. O Sistema de Variáveis (Design System)
-
-No arquivo `src/styles/theme.css`, vamos colar a nossa paleta de cores. Como a
-aplicação terá um Modo Claro e um Modo Escuro (começaremos pelo escuro),
-precisamos de uma estrutura sólida de variáveis.
-
-### Como nossas variáveis estão organizadas?
-
-- **Tons de Cinza (`--gray-100` a `--gray-900`):** Usados para fundos e
-  elementos de interface. O `100` é o mais claro e o `900` é o mais escuro.
-- **Cor Primária:** Nosso tom de verde principal (`--primary`).
-- **Cores de Alerta (Feedbacks):** \* `--success` (Verde: operação bem-sucedida)
-  - `--warning` (Amarelo: atenção/aviso)
-  - `--error` (Vermelho: falha/erro)
-  - `--info` (Azul: informação neutra)
-- **Cores de Texto Baseadas no Fundo:** Criamos variáveis específicas para
-  textos que ficam _sobre_ fundos coloridos (ex: `text-on-primary`). Isso
-  garante que, mesmo quando mudarmos o tema de claro para escuro, o texto dentro
-  de um botão verde continue legível.
-- **Textos Gerais:** `--text-default` (cor principal da leitura), `--text-muted`
-  (textos secundários/apagados) e cores para elementos desativados (`disabled`).
+Nesta aula, vamos evoluir o nosso componente `<Heading />`. Aprenderemos como
+utilizar o TypeScript para garantir que ele receba os tipos corretos de dados
+(tipagem das `props`), como deixar o código mais limpo usando desestruturação e
+como integrar ícones profissionais ao nosso projeto.
 
 ---
 
-## 🧹 2. Reset de CSS e Configuração do `rem`
+## 🛡️ 1. O Problema da Tipagem Implícita (O temido `any`)
 
-No arquivo `src/styles/global.css`, removemos os testes da aula anterior e
-configuramos a base do nosso projeto.
+Se você estiver usando TypeScript, notou que o parâmetro `props` do nosso
+componente estava sublinhado. Isso acontece porque o TypeScript não sabe o que
+tem dentro de `props`. Para ele, é um tipo `any` (qualquer coisa), o que quebra
+a principal vantagem do TypeScript: a segurança!
 
-### O Reset Básico
+Para resolver isso, precisamos criar um **Tipo (`type`)** ou **Interface** para
+descrever exatamente o que o nosso componente espera receber.
 
-Zeramos as margens e preenchimentos que o navegador aplica por padrão e
-ajustamos o modelo de caixa:
+### Criando a Tipagem
 
-```css
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+1. Por convenção, nomeamos o tipo com o nome do componente seguido da palavra
+   `Props` (Ex: `HeadingProps`).
+2. Definimos quais chaves o objeto terá e quais os seus tipos de dados.
+
+```tsx
+// src/components/Heading.tsx
+
+// 1. Criamos o "contrato" do componente
+type HeadingProps = {
+  children: string; // Inicialmente, dizemos que children será apenas texto
+};
+
+// 2. Aplicamos o tipo ao parâmetro da função (props: HeadingProps)
+export function Heading(props: HeadingProps) {
+  return <h1 className='heading'>{props.children}</h1>;
 }
 ```
 
-**O Truque do `{62.5% }`(Unidade REM)** O navegador, por padrão, tem o tamanho
-de fonte de `16px`. Trabalhar com a unidade relativa `rem` é uma excelente
-prática para acessibilidade e responsividade, mas calcular os valores de cabeça
-pode ser chato (ex: 20px seria 1.25rem).
+## ✂️ 2. Deixando o Código Limpo: Desestruturação (Destructuring)
 
-Para resolver isso, aplicamos um truque no `html`:
+Ficar escrevendo props.isso e props.aquilo toda hora deixa o código verboso. O
+JavaScript possui um recurso chamado Desestruturação, que nos permite extrair
+variáveis de dentro de um objeto logo na sua declaração.
 
-```css
-html {
-  font-size: 62.5%;
+Podemos fazer a desestruturação diretamente nos parâmetros da função!
+
+### Antes (Verboso):
+
+```tsx
+export function Heading(props: HeadingProps) {
+  return <h1>{props.children}</h1>;
 }
 ```
 
-**O que isso faz?** Reduz a fonte base de `16px` para `10px` (pois 62.5% de 16 =
-10). Agora, a matemática fica super simples: basta dividir o valor em pixels por
-10 e trocar o ponto!
+### Depois (Limpo e Direto):
 
-- Quer 16px? Escreva 1.6rem.
-- Quer 25px? Escreva 2.5rem.
-- Quer 400px? Escreva 40rem.
-
-## 📄 3. Estilizando o `body`
-
-Ainda no `global.css`, aplicamos as configurações padrão para a nossa página
-inteira, consumindo as variáveis que criamos no arquivo de tema:
-
-```css
-body {
-  /* Tamanho base de 16px, graças ao truque do rem! */
-  font-size: 1.6rem;
-
-  /* Fonte padrão do sistema operacional do usuário */
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
-    sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
-
-  /* Aplicando nossas variáveis do tema escuro */
-  background-color: var(--gray-900);
-  color: var(--text-default);
+```tsx
+export function Heading({ children }: HeadingProps) {
+  return <h1>{children}</h1>;
 }
 ```
 
-## 🔜 Próximos Passos
+# 🏷️ Tipagem de Props com TypeScript e Adição de Ícones
 
-Com o nosso CSS Global e Tema configurados, agora temos o fundo escuro e o texto
-claro aplicados corretamente na tela.
+Nesta aula, vamos evoluir o nosso componente `<Heading />`. Aprenderemos como
+utilizar o TypeScript para garantir que ele receba os tipos corretos de dados
+(tipagem das `props`), como deixar o código mais limpo usando desestruturação e
+como integrar ícones profissionais ao nosso projeto.
 
-Na próxima aula, voltaremos ao nosso componente `<Heading />`. Vamos estilizá-lo
-e prepará-lo para ser flexível, pois em algumas páginas (como a de "Histórico")
-ele precisará renderizar um botão extra ao seu lado!
+---
+
+## 🛡️ 1. O Problema da Tipagem Implícita (O temido `any`)
+
+Se você estiver usando TypeScript, notou que o parâmetro `props` do nosso
+componente estava sublinhado. Isso acontece porque o TypeScript não sabe o que
+tem dentro de `props`. Para ele, é um tipo `any` (qualquer coisa), o que quebra
+a principal vantagem do TypeScript: a segurança!
+
+Para resolver isso, precisamos criar um **Tipo (`type`)** ou **Interface** para
+descrever exatamente o que o nosso componente espera receber.
+
+### Criando a Tipagem
+
+1. Por convenção, nomeamos o tipo com o nome do componente seguido da palavra
+   `Props` (Ex: `HeadingProps`).
+2. Definimos quais chaves o objeto terá e quais os seus tipos de dados.
+
+```tsx
+// src/components/Heading.tsx
+
+// 1. Criamos o "contrato" do componente
+type HeadingProps = {
+  children: string; // Inicialmente, dizemos que children será apenas texto
+};
+
+// 2. Aplicamos o tipo ao parâmetro da função (props: HeadingProps)
+export function Heading(props: HeadingProps) {
+  return <h1 className='heading'>{props.children}</h1>;
+}
+```
+
+## ✂️ 2. Deixando o Código Limpo: Desestruturação (Destructuring)
+
+Ficar escrevendo `props.isso` e `props.aquilo` toda hora deixa o código verboso.
+O JavaScript possui um recurso chamado **Desestruturação**, que nos permite
+extrair variáveis de dentro de um objeto logo na sua declaração.
+
+Podemos fazer a desestruturação diretamente nos parâmetros da função!
+
+### Antes (Verboso):
+
+```tsx
+TypeScript;
+export function Heading(props: HeadingProps) {
+  return <h1>{props.children}</h1>;
+}
+```
+
+### Depois (Limpo e Direto):
+
+```tsx
+TypeScript;
+export function Heading({ children }: HeadingProps) {
+  return <h1>{children}</h1>;
+}
+```
+
+_Dica: Ao fazer isso, se você abrir chaves `{ }` e apertar `Ctrl + Espaço`, o
+editor já vai sugerir children automaticamente, graças ao TypeScript!_
+
+## 🎨 3. Instalando e Usando Ícones (lucide-react)
+
+O nosso `<Heading />` precisa renderizar um botão com um ícone ao lado do texto
+em algumas telas (como na tela de "Histórico").
+
+Para isso, vamos utilizar a biblioteca **Lucide Icons**, que é moderna, leve e
+possui um pacote oficial para React.
+
+### Passo 1: Instalação
+
+No terminal do seu projeto, rode o comando:
+
+```bash
+npm install lucide-react
+```
+
+### Passo 2: O Problema do TypeScript com Componentes Filhos
+
+Se tentarmos passar o botão e o ícone para dentro do nosso
+`<Heading>Texto <button>...</button></Heading>`, o TypeScript vai gritar um
+erro!
+
+Lembra que dissemos que `children` era do tipo `string`? Um `<button>` não é uma
+`string`, é um elemento React!
+
+Para resolver isso, mudamos o tipo de `children` para `React.ReactNode`, que é o
+tipo global do React que aceita TUDO (textos, números, HTML, outros componentes,
+etc).
+
+```tsx
+import React from 'react'; // Importante importar o React
+
+type HeadingProps = {
+  // Agora aceitamos texto OU outros componentes JSX!
+  children: React.ReactNode;
+};
+```
+
+### Passo 3: Adicionando o Ícone no App.jsx
+
+Agora podemos importar o ícone (ex: `Timer`) e usá-lo livremente como filho do
+nosso componente. Os ícones do Lucide funcionam como componentes normais do
+React (iniciam com letra maiúscula).
+
+```tsx
+// src/App.tsx
+import { Heading } from './components/Heading';
+import { Timer } from 'lucide-react'; // Importando o ícone
+
+export function App() {
+  return (
+    <Heading>
+      Histórico
+      <button>
+        <Timer /> {/* Renderizando o ícone dentro do botão */}
+      </button>
+    </Heading>
+  );
+}
+```
+
+## 📏 4. Ajustando o Alinhamento com CSS Flexbox
+
+Para garantir que o texto "Histórico" e o botão fiquem perfeitamente alinhados
+lado a lado, vamos usar o poder do **Flexbox** no arquivo CSS do componente.
+
+```css
+/* src/components/Heading.module.css (ou global, dependendo de como você estruturou) */
+.heading {
+  display: flex; /* Ativa o Flexbox */
+  justify-content: center; /* Centraliza o conteúdo horizontalmente */
+  align-items: center; /* Centraliza o conteúdo verticalmente (alinhamento perfeito) */
+  gap: 2.4rem; /* Adiciona 24px de espaço entre o texto e o botão/ícone */
+}
+```
+
+Pronto! Agora temos um componente `<Heading />` fortemente tipado, estruturado
+de forma limpa e capaz de renderizar tanto textos simples quanto layouts
+complexos com ícones de forma perfeitamente alinhada.
