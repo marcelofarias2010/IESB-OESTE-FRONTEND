@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechStore</title>
+
+    <link rel="stylesheet" href="./css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Iceland&family=Iceberg&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Hubballi&display=swap" rel="stylesheet">
+
+    <!-- Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+</head>
+
+<body>
+
+    <nav class="navbar">
+
+        <!-- Logo -->
+        <div class="logo">
+            <img src="./img/logo-removebg-preview.png" alt="TechStore">
+        </div>
+
+        <!-- Menu -->
+        <ul class="nav-links">
+            <li><a href="#">Home</a></li>
+            <li><a href="#">Produtos</a></li>
+            <li><a href="#">Contato</a></li>
+        </ul>
+
+        <!-- Carrinho -->
+        <div class="cart">
+            <i class="fa-solid fa-cart-shopping"></i>
+            <span class="cart-count">0</span>
+        </div>
+
+        <!-- Menu Mobile -->
+        <div class="menu-toggle">
+            <i class="fa-solid fa-bars"></i>
+        </div>
+
+    </nav>
+
+    <section class="hero">
+
+        <div class="hero-overlay"></div>
+
+        <div class="hero-content">
+
+            <h1>
+                Conectamos você às inovações<br>
+                que transformam hoje<br>
+                & constroem o amanhã
+            </h1>
+
+            <p>
+                Tecnologia, inovação e os melhores eletrônicos em um só lugar.
+            </p>
+
+            <div class="hero-buttons">
+                <a href="#" class="btn-primary">Comprar agora</a>
+                <a href="#" class="btn-secondary">Ver produtos</a>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="destaques">
+
+        <h2 class="titulo-destaques">Destaques</h2>
+
+        <div class="produtos">
+
+            <!-- Produto 1 -->
+            <div class="card">
+
+                <img src="./img/products/iphone_17.jpg" alt="Iphone 17">
+
+                <div class="card-info">
+
+                    <h3>Iphone 17</h3>
+                    <p>Performance absurda e design futurista.</p>
+
+                    <div class="preco">
+
+                        <span class="preco-antigo">R$ 9.999</span>
+                        <span class="preco-novo">R$ 8.199</span>
+                        <span class="desconto">-18%</span>
+
+                    </div>
+
+                    <button class="btn-comprar">
+                        COMPRAR
+                        <span>Adicione ao carrinho</span>
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- Produto 2 -->
+            <div class="card">
+
+                <img src="./img/products/playstation5.png" alt="Playstation 5">
+
+                <div class="card-info">
+
+                    <h3>PlayStation 5</h3>
+                    <p>Nova geração de jogos com gráficos incríveis.</p>
+
+                    <div class="preco">
+
+                        <span class="preco-antigo">R$ 4.999</span>
+                        <span class="preco-novo">R$ 4.199</span>
+                        <span class="desconto">-16%</span>
+
+                    </div>
+
+                    <button class="btn-comprar">
+                        COMPRAR
+                        <span>Adicione ao carrinho</span>
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- Produto 3 -->
+            <div class="card">
+
+                <img src="./img/products/airpods_vertical.png" alt="AirPods Pro 3">
+
+                <div class="card-info">
+
+                    <h3>AirPods Pro 3</h3>
+                    <p>Som imersivo com cancelamento de ruído.</p>
+
+                    <div class="preco">
+
+                        <span class="preco-antigo">R$ 2.399</span>
+                        <span class="preco-novo">R$ 1.799</span>
+                        <span class="desconto">-25%</span>
+
+                    </div>
+
+                    <button class="btn-comprar">
+                        COMPRAR
+                        <span>Adicione ao carrinho</span>
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- Produto 4 -->
+            <div class="card">
+
+                <img src="./img/products/iphone_air.jpg" alt="Iphone Air">
+
+                <div class="card-info">
+
+                    <h3>Iphone Air</h3>
+                    <p>Leve, potente e com bateria de longa duração.</p>
+
+                    <div class="preco">
+
+                        <span class="preco-antigo">R$ 7.999</span>
+                        <span class="preco-novo">R$ 6.499</span>
+                        <span class="desconto">-19%</span>
+
+                    </div>
+
+                    <button class="btn-comprar">
+                        COMPRAR
+                        <span>Adicione ao carrinho</span>
+                    </button>
+
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="ofertas">
+
+        <h2 class="titulo-ofertas">Ofertas Especiais</h2>
+
+        <div class="ofertas-container">
+
+            <!-- FILTRO -->
+            <div class="filtro">
+
+                <h3>Filtros</h3>
+
+                <label>
+                    <input type="checkbox"> Smartphones
+                </label>
+
+                <label>
+                    <input type="checkbox"> Placas de vídeo
+                </label>
+
+                <label>
+                    <input type="checkbox"> Teclados
+                </label>
+
+                <label>
+                    <input type="checkbox"> Mouse
+                </label>
+
+                <label>
+                    <input type="checkbox"> Headsets
+                </label>
+
+                <label>
+                    <input type="checkbox"> Fone Bluetooth
+                </label>
+                <label>
+                    <input type="checkbox"> Consoles
+                </label>
+
+                <label>
+                    <input type="checkbox"> RGB
+                </label>
+
+                <label>
+                    <input type="checkbox"> Computadores
+                </label>
+
+                <div class="filtro-botoes">
+
+                    <button class="btn-aplicar">Aplicar filtros</button>
+                    <button class="btn-limpar">Limpar filtros</button>
+
+                </div>
+
+            </div>
+
+
+            <!-- PRODUTOS -->
+            <div class="ofertas-produtos">
+
+                <!-- Produto 1 -->
+                <div class="card-oferta" data-category="gamer">
+
+                    <img src="./img/products/rtx4060.png" alt="RTX 4060 Ti">
+
+                    <div class="oferta-info">
+
+                        <h3>RTX 4060 Ti</h3>
+
+                        <p>Desempenho extremo para jogos modernos.</p>
+                        <p>Ray Tracing e DLSS da última geração.</p>
+
+                        <div class="preco">
+
+                            <span class="preco-antigo">R$ 4.299</span>
+                            <span class="preco-novo">R$ 2.899</span>
+                            <span class="desconto">-33%</span>
+
+                        </div>
+
+                        <button class="btn-comprar">
+                            COMPRAR
+                            <span>Adicione ao carrinho</span>
+                        </button>
+
+                    </div>
+                </div>
+
+
+                <!-- Produto 2 -->
+                <div class="card-oferta">
+
+                    <img src="./img/products/headset.png" alt="Headset Gamer RGB">
+
+                    <div class="oferta-info">
+
+                        <h3>Headset Gamer RGB</h3>
+
+                        <p>Som surround imersivo para gameplay.</p>
+                        <p>Iluminação RGB personalizável.</p>
+
+                        <div class="preco">
+
+                            <span class="preco-antigo">R$ 799</span>
+                            <span class="preco-novo">R$ 399</span>
+                            <span class="desconto">-50%</span>
+
+                        </div>
+
+                        <button class="btn-comprar">
+                            COMPRAR
+                            <span>Adicione ao carrinho</span>
+                        </button>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <footer class="footer">
+
+        <div class="footer-container">
+
+            <!-- Logo -->
+            <div class="footer-logo">
+                <img src="./img/logo-removebg-preview.png" alt="TechStore">
+            </div>
+
+
+            <!-- Contato -->
+            <div class="footer-col">
+
+                <h3>Contato</h3>
+
+                <a href="#">
+                    <i class="fa-solid fa-phone"></i>
+                    (61) 99876-5432
+                </a>
+
+                <a href="#">
+                    <i class="fa-brands fa-instagram"></i>
+                    @techstore
+                </a>
+
+                <a href="#">
+                    <i class="fa-brands fa-facebook"></i>
+                    TechStore
+                </a>
+
+            </div>
+
+
+            <!-- Minha Conta -->
+            <div class="footer-col">
+
+                <h3>Minha Conta</h3>
+
+                <a href="#">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    Entrar na conta
+                </a>
+
+                <a href="#">
+                    <i class="fa-solid fa-cash-register"></i>
+                    Cadastrar como vendedor
+                </a>
+
+                <a href="#">
+                    <i class="fa-solid fa-fingerprint"></i>
+                    Criar conta
+                </a>
+
+            </div>
+
+
+            <!-- Temporadas -->
+            <div class="footer-col">
+
+                <h3>Temporadas</h3>
+
+                <a href="#">Dia do Consumidor</a>
+                <a href="#">Black Friday</a>
+                <a href="#">Eventos de Descontos</a>
+
+            </div>
+
+        </div>
+
+
+        <!-- Copyright -->
+
+        <div class="footer-bottom">
+            © TechStore. Todos os direitos reservados.
+        </div>
+
+    </footer>
+
+    <script>
+        const menuToggle = document.querySelector(".menu-toggle");
+        const navLinks = document.querySelector(".nav-links");
+
+        menuToggle.onclick = () => {
+            navLinks.classList.toggle("active");
+        }
+    </script>
+
+</body>
+
+</html>

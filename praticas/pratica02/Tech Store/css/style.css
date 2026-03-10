@@ -1,0 +1,585 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #eeeeee;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* NAVBAR */
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  height: 80px;
+  background: #ffffff;
+}
+
+/* LOGO */
+
+.logo img {
+  height: 120px;
+}
+
+/* LINKS */
+
+.nav-links {
+  display: flex;
+  list-style: none;
+  gap: 35px;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: #333;
+  font-size: 16px;
+  background: #d9d9d9;
+  padding: 10px 22px;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+
+.nav-links a:hover {
+  transform: scale(1.05);
+}
+
+/* CARRINHO */
+
+.cart {
+  position: relative;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.cart-count {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  background: red;
+  color: white;
+  font-size: 12px;
+  padding: 3px 6px;
+  border-radius: 50%;
+}
+
+/* MENU MOBILE */
+
+.menu-toggle {
+  display: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+/* RESPONSIVO */
+
+@media (max-width: 768px) {
+  .nav-links {
+    position: absolute;
+    top: 80px;
+    left: 0;
+    width: 100%;
+    background: white;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 0;
+    display: none;
+  }
+
+  .nav-links.active {
+    display: flex;
+  }
+
+  .menu-toggle {
+    display: block;
+  }
+}
+
+/* HERO */
+
+.hero {
+  position: relative;
+  width: 100%;
+  height: 600px;
+
+  background-image: url("../img/products/bannerHzt.png");
+  background-size: cover;
+  background-position: center;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* força conteúdo à esquerda */
+
+  padding-left: 8%;
+  color: white;
+}
+
+.hero-content {
+  position: relative;
+  max-width: 600px;
+  text-align: left;
+}
+
+/* Overlay escuro */
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 0, 0, 0.3) 40%,
+    rgba(0, 0, 0, 0) 70%
+  );
+}
+
+/* Conteúdo */
+
+.hero-content {
+  position: relative;
+  max-width: 600px;
+  animation: fadeUp 1s ease;
+}
+
+.hero-content h1 {
+  font-size: 48px;
+  line-height: 1.2;
+  margin-bottom: 20px;
+}
+
+.hero-content p {
+  font-size: 18px;
+  margin-bottom: 30px;
+  color: #e5e5e5;
+}
+
+/* BOTÕES */
+
+.hero-buttons {
+  display: flex;
+  gap: 20px;
+}
+
+.btn-primary {
+  background: #7b3fe4;
+  color: white;
+  padding: 14px 28px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.btn-primary:hover {
+  transform: scale(1.05);
+}
+
+.btn-secondary {
+  background: white;
+  color: #333;
+  padding: 14px 28px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.btn-secondary:hover {
+  transform: scale(1.05);
+}
+
+/* ANIMAÇÃO */
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* RESPONSIVO */
+
+@media (max-width: 768px) {
+  .hero {
+    height: 500px;
+    text-align: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .hero-content h1 {
+    font-size: 32px;
+  }
+
+  .hero-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+/* SEÇÃO DESTAQUES */
+
+.destaques {
+  padding: 80px 5%;
+  font-family: "Iceberg", sans-serif;
+}
+
+.titulo-destaques {
+  text-align: center;
+  font-size: 40px;
+  margin-bottom: 50px;
+  font-family: "Iceland", cursive;
+}
+
+/* GRID PRODUTOS */
+
+.produtos {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+/* CARD */
+
+.card {
+  background: #ffffff;
+  width: 260px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  transition: 0.3s;
+  display: flex;
+  flex-direction: column;
+}
+
+.card:hover {
+  transform: translateY(-8px);
+}
+
+/* IMAGEM */
+
+.card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+/* INFO */
+
+.card-info {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card-info h3 {
+  font-family: "Iceland", cursive;
+  font-size: 22px;
+}
+
+.card-info p {
+  font-size: 14px;
+  color: #555;
+}
+
+/* PREÇO */
+
+.preco {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.preco-antigo {
+  text-decoration: line-through;
+  color: #999;
+  font-size: 14px;
+}
+
+.preco-novo {
+  font-size: 20px;
+  font-weight: bold;
+  color: #7b3fe4;
+}
+
+.desconto {
+  font-size: 14px;
+  color: rgb(205, 187, 233);
+  font-weight: bold;
+}
+
+/* BOTÃO */
+
+.btn-comprar {
+  margin-top: 15px;
+  background: #7b3fe4;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: "Iceberg";
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: 0.3s;
+}
+
+.btn-comprar span {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.btn-comprar:hover {
+  transform: scale(1.05);
+}
+
+/* SEÇÃO OFERTAS */
+
+.ofertas {
+  padding: 80px 5%;
+  font-family: "Iceberg", sans-serif;
+}
+
+.titulo-ofertas {
+  text-align: center;
+  font-size: 38px;
+  margin-bottom: 50px;
+  font-family: "Iceland", cursive;
+}
+
+/* CONTAINER */
+
+.ofertas-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+/* FILTRO */
+
+.filtro {
+  background: #ffffff;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  min-width: 180px;
+}
+
+.filtro h3 {
+  font-family: "Iceland";
+}
+
+.filtro label {
+  font-size: 14px;
+}
+
+/* BOTÕES FILTRO */
+
+.filtro-botoes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-aplicar {
+  background: #7b3fe4;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-limpar {
+  background: #ddd;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* PRODUTOS */
+
+.ofertas-produtos {
+  display: flex;
+  gap: 30px;
+}
+
+/* CARD OFERTA */
+
+.card-oferta {
+  background: #ffffff;
+  width: 320px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  transition: 0.3s;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-oferta:hover {
+  transform: translateY(-8px);
+}
+
+/* IMAGEM */
+
+.card-oferta img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+}
+
+/* INFO */
+
+.oferta-info {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.oferta-info h3 {
+  font-family: "Iceland";
+  font-size: 24px;
+}
+
+.oferta-info p {
+  font-size: 14px;
+  color: #555;
+}
+
+/* PREÇOS */
+
+.preco {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.preco-antigo {
+  text-decoration: line-through;
+  color: #999;
+}
+
+.preco-novo {
+  font-size: 22px;
+  font-weight: bold;
+  color: #7b3fe4;
+}
+
+.desconto {
+  color: rgb(118, 69, 136);
+  font-weight: bold;
+}
+
+/* BOTÃO */
+
+.btn-comprar {
+  margin-top: 15px;
+  background: #7b3fe4;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: "Iceberg";
+}
+
+.btn-comprar span {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.btn-comprar:hover {
+  transform: scale(1.05);
+}
+
+/* FOOTER */
+
+.footer {
+  background: #ffffff;
+  margin-top: 80px;
+  font-family: "Hubballi", sans-serif;
+}
+
+.footer-container {
+  display: flex;
+  justify-content: center;
+  gap: 80px;
+  padding: 60px 8%;
+  flex-wrap: wrap;
+}
+
+/* LOGO */
+
+.footer-logo img {
+  width: 140px;
+}
+
+/* COLUNAS */
+
+.footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 160px;
+}
+
+.footer-col h3 {
+  margin-bottom: 10px;
+  font-size: 22px;
+}
+
+/* LINKS */
+
+.footer-col a {
+  text-decoration: none;
+  color: #333;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: 0.3s;
+}
+
+.footer-col a:hover {
+  color: #7b3fe4;
+}
+
+/* COPYRIGHT */
+
+.footer-bottom {
+  text-align: center;
+  padding: 20px;
+  border-top: 1px solid #eee;
+  font-size: 14px;
+  color: #666;
+}
