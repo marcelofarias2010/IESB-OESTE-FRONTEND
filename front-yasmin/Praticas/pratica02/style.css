@@ -1,0 +1,442 @@
+/* ====================================
+   VARIÁVEIS (PALETA DE CORES)
+==================================== */
+
+:root {
+  --bg-dark: #2a1f5a;
+  --bg-darker: #1a1438;
+
+  --accent-blue: #1ea7fd;
+  --accent-pink: #ff2a7f;
+
+  --hero-bg: #e9c6d0;
+
+  --text-dark: #333;
+  --text-light: #ffffff;
+
+  --card-bg: #ffffff;
+}
+
+/* ====================================
+   RESET GERAL
+==================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background: #f5f5f5;
+  color: var(--text-dark);
+}
+
+/* ====================================
+   HEADER
+==================================== */
+
+.site-header {
+  background: var(--bg-dark);
+  color: white;
+
+  padding: 15px 5%;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Logo */
+
+.site-logo img {
+  height: 60px;
+}
+
+/* Menu */
+
+.main-nav ul {
+  list-style: none;
+
+  display: flex;
+  gap: 25px;
+}
+
+.main-nav a {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.main-nav a:hover {
+  color: var(--accent-pink);
+}
+
+/* Área direita */
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* Barra de busca */
+
+.search-box {
+  background: var(--bg-darker);
+  border-radius: 20px;
+  padding: 8px 18px;
+  width: 260px;
+}
+
+.search-box input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: white;
+  width: 100%;
+}
+
+/* Carrinho */
+
+.shopping-cart {
+  position: relative;
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.cart-count {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+
+  background: var(--accent-pink);
+  color: white;
+
+  font-size: 0.7rem;
+  padding: 2px 6px;
+
+  border-radius: 50%;
+}
+
+/* ====================================
+   HERO / BANNER
+==================================== */
+
+.hero-banner {
+  background: #e9c6d0;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 80px 10%;
+}
+
+/* Texto do banner */
+
+.hero-content {
+  max-width: 45%;
+}
+
+.hero-content h1 {
+  font-size: 3.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #2a1f5a;
+}
+
+.hero-content p {
+  color: #555;
+  margin-bottom: 25px;
+}
+
+/* Botão principal */
+
+.btn-primary {
+  background: var(--accent-pink);
+  color: white;
+  border: none;
+  transition: transform 0.4s ease;
+  padding: 12px 28px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-10px);
+}
+
+/* Imagens do banner */
+
+.hero-products {
+  width: 60%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hero-img {
+  width: 100%;
+  max-width: 700px;
+  transition: transform 0.4s ease;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 25px 40px rgba(0, 0, 0, 0.35);
+}
+.hero-img:hover{
+  transform: translateY(-10px);
+}
+
+.img-rtx {
+  width: 260px;
+  top: -20px;
+  left: 0;
+}
+
+.img-ssd {
+  width: 150px;
+  bottom: -20px;
+  left: 90px;
+}
+
+.img-ryzen {
+  width: 180px;
+  top: 30px;
+  right: 0;
+}
+
+/* ====================================
+   SEÇÃO DE PRODUTOS
+==================================== */
+
+.products-section {
+  padding: 50px 5%;
+  background: white;
+}
+
+.section-title {
+  text-align: center;
+  font-size: 1.8rem;
+  margin-bottom: 40px;
+}
+
+/* Grid com Flexbox */
+
+.products-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+}
+
+/* ====================================
+   CARD DO PRODUTO
+==================================== */
+
+.product-card {
+  background: var(--card-bg);
+
+  width: 200px;
+
+  border-radius: 10px;
+  padding: 15px;
+
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.08);
+
+  display: flex;
+  flex-direction: column;
+
+  position: relative;
+
+  transition: transform 0.2s;
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+}
+
+/* Badge de oferta */
+
+.product-badge {
+  position: absolute;
+
+  top: 10px;
+  left: 10px;
+
+  background: var(--accent-pink);
+  color: white;
+
+  font-size: 0.7rem;
+  padding: 4px 8px;
+
+  border-radius: 4px;
+}
+.btn-cart:hover {
+  transform: scale(1.05);
+}
+/* Imagem */
+
+.product-img {
+  width: 100%;
+  height: 120px;
+
+  object-fit: contain;
+
+  margin-bottom: 10px;
+}
+
+/* Nome */
+
+.product-title {
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+}
+
+/* Preços */
+
+.price-old {
+  font-size: 0.75rem;
+  color: #888;
+  text-decoration: line-through;
+}
+
+.price-new {
+  font-size: 1rem;
+  font-weight: bold;
+  color: var(--accent-pink);
+  margin-bottom: 10px;
+}
+
+/* Botão do card */
+
+.btn-cart {
+  background: var(--accent-pink);
+  color: white;
+
+  border: none;
+  padding: 7px;
+
+  border-radius: 6px;
+
+  font-size: 0.75rem;
+  font-weight: bold;
+
+  cursor: pointer;
+}
+
+.btn-cart:hover {
+  opacity: 0.9;
+}
+
+/* ====================================
+   FOOTER
+==================================== */
+
+.site-footer {
+  background: var(--bg-dark);
+  color: white;
+
+  padding: 40px 5%;
+}
+
+/* Estrutura */
+
+.footer-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 30px;
+  margin-bottom: 30px;
+
+  border-bottom: 1px solid #444;
+  padding-bottom: 25px;
+}
+
+/* Contatos */
+
+.footer-contact p {
+  margin-bottom: 8px;
+  color: #ccc;
+}
+
+/* Logo central */
+
+.footer-brand {
+  text-align: center;
+}
+
+.footer-brand img {
+  height: 90px;
+}
+
+/* Redes sociais */
+
+.social-links {
+  display: flex;
+  gap: 15px;
+}
+
+.social-links a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 35px;
+  height: 35px;
+
+  background: var(--accent-pink);
+  color: white;
+
+  border-radius: 50%;
+  text-decoration: none;
+}
+
+/* Copyright */
+
+.footer-copy {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #aaa;
+}
+/* ====================================
+   RESPONSIVIDADE
+==================================== */
+
+/* Tablet */
+
+@media (max-width: 900px) {
+  .hero-banner {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .hero-content {
+    max-width: 100%;
+  }
+
+  .hero-products {
+    width: 100%;
+    margin-top: 30px;
+  }
+}
+
+/* Celular */
+
+@media (max-width: 600px) {
+  .main-nav {
+    display: none;
+  }
+
+  .footer-container {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .products-grid {
+    justify-content: center;
+  }
+}
