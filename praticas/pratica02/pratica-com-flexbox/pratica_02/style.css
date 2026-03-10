@@ -1,0 +1,243 @@
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family: Arial, Helvetica, sans-serif;
+}
+
+body{
+background:#f9f4fb;
+color:#333;
+}
+
+/* HEADER */
+
+header{
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:20px 60px;
+background:white;
+}
+
+.logo img{
+height:130px;
+}
+
+.search input{
+width:450px;
+height: 50px;
+padding:10px;
+border-radius:20px;
+border:none;
+background:#cdb4db;
+color:white;
+}
+
+.search input::placeholder{
+font-family: "DM Serif Display", serif;
+color:white;
+}
+
+.icons span{
+margin-left:20px;
+font-size:35px;
+cursor:pointer;
+transition: transform 0.3s ease;
+}
+.icons span:hover{
+transform: scale(1.2);
+}
+
+#favorite{
+color: #ffafcc;    
+}
+#person{
+color: #cdb4db;
+}
+#shopping_cart{
+color: #ffc8dd;
+}
+
+/* BANNER */
+
+.banner{
+text-align:center;
+background:white;
+padding-bottom:20px;
+}
+
+.banner h1{
+font-family: "DM Serif Display", serif;
+font-weight: 200;
+font-size:55px;
+margin-bottom: 10px;
+margin-top:20px;
+}
+
+.banner p{
+font-family: "Dancing Script", cursive;
+font-size: 30px;
+margin-bottom:25px;
+}
+
+.banner img{
+width:100%;
+max-height:600px;
+object-fit:cover;
+}
+
+
+/* PRODUTOS */
+
+.produtos{
+padding:40px 80px;
+}
+
+.produtos h2{
+color: white;
+background-color: #ffafcc;
+width: 370px;
+padding: 5px;
+border-radius: 15px;
+font-family: "DM Serif Display", serif;
+font-weight: 200;
+margin-bottom:40px;
+font-size:35px;
+}
+
+#arrow{
+position: relative;
+top: 5px;
+font-size: 30px;
+color: white;    
+}
+
+.grid-produtos{
+margin: auto;
+max-width: 85%;
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:50px;
+}
+
+
+/* CARD PRODUTO */
+
+.produto{
+background:white;
+border-radius:10px;
+padding:15px;
+box-shadow:0 4px 10px rgba(0,0,0,0.05);
+text-align:left;
+transition: transform 0.3s ease;
+}
+
+.produto:hover{
+transform: scale(1.03);
+}
+.produto img{
+width:100%;
+border-radius:8px;
+margin-bottom:10px;
+}
+
+.produto h3{
+font-family: "DM Serif Display", serif;
+font-weight: 100;
+font-size:16px;
+margin-bottom:5px;
+}
+
+.preco-antigo{
+text-decoration:line-through;
+color:#888;
+font-size:14px;
+}
+
+.preco{
+font-weight:bold;
+margin-bottom:10px;
+}
+
+.produto button{
+font-family: "DM Serif Display", serif;
+font-weight: lighter;    
+width:100%;
+padding:10px;
+border:none;
+background:#cdb4db;
+color:white;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.produto button:hover{
+background:#ffc8dd;
+}
+
+
+/* FOOTER */
+
+footer{
+height: 180px;
+background-color: #ffafcc;
+color:white;
+display:flex;
+justify-content:space-between;
+padding:20px 80px;
+margin-top:40px;
+}
+
+footer h3{
+margin-bottom:10px;
+font-family:"Dancing Script", cursive; 
+font-size: 30px;
+}
+
+.texto-footer{
+width: 300px;
+}
+footer p{
+
+font-weight: 100;
+font-family:"DM Serif Display", serif; 
+
+margin-bottom:5px;
+}
+
+.links{
+
+position: relative;
+top: 40px;
+margin-right:10px;
+cursor:pointer;
+}
+
+.links a{
+font-family:"DM Serif Display", serif; 
+text-decoration: none;
+color: white;
+}
+.links a:hover{
+text-decoration: underline;
+
+}
+
+.logo-footer{
+    border-radius: 50%;
+    width: 170px;
+    height: 150px;
+}
+.direitos{
+height: 40px;
+background-color: #cdb4db;
+}
+.direitos > p {
+    font-size: 15px;
+font-family:"DM Serif Display", serif; 
+color: white;
+text-align: center;
+padding-top: 10px;
+}
