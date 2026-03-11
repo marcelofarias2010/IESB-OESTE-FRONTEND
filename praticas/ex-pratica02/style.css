@@ -8,7 +8,7 @@
 }
 
 body {
-  background: url("../image/plano de fundo.jpg") no-repeat center center/cover;
+  background: url("./image/plano\ de\ fundo.jpg") no-repeat center center/cover;
   color: white;
 }
 
@@ -52,7 +52,7 @@ body {
 
 .hero {
   height: 350px;
-  background: url("../image/3b1d7c4d-1248-4109-87c1-70a3972f3c2e-removebg-preview.png") no-repeat center center/cover;
+  background: url("./image/3b1d7c4d-1248-4109-87c1-70a3972f3c2e-removebg-preview.png") no-repeat center center/cover;
   display: flex;
   align-items: center;
   justify-content: center;
