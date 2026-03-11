@@ -1,0 +1,309 @@
+/* RESET */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* PALETA */
+:root {
+  --bg: #070f24;
+  --card: #0f1b3d;
+  --primary: #4f7cff;
+  --secondary: #7b2cff;
+  --text: #e6ecff;
+  --muted: #9aa4c7;
+}
+
+/* BASE */
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* HEADER */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 40px;
+  background: #060d20;
+}
+
+.logo {
+  font-family: 'Orbitron', sans-serif;
+  color: #6aa2ff;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.nav a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.cart span {
+  background: red;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+/* HERO */
+/* ===== HERO BANNER ===== */
+
+.hero {
+  position: relative;
+  height: 340px;
+
+  /* IMAGEM */
+  background-image: url("https://img.pikbest.com/backgrounds/20240517/cool-technology-or-webside-banner-image-blue-background-_10568916.jpg!w700wp");
+  background-size: cover;
+  background-position: center;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* camada escura por cima da imagem */
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 10, 24, 0.75);
+}
+
+/* conteúdo fica acima do overlay */
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 600px;
+}
+
+.hero h2 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2.3rem;
+  margin-bottom: 10px;
+}
+
+.hero p {
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+.btn-primary {
+  background: var(--primary);
+  border: none;
+  padding: 10px 18px;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--primary);
+  padding: 10px 18px;
+  color: var(--text);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* PROMO */
+.promo {
+  margin: 30px 40px;
+  padding: 14px 20px;
+  background: linear-gradient(90deg, var(--secondary), var(--primary));
+  border-radius: 10px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* PRODUTOS */
+.products {
+  padding: 0 40px 40px;
+}
+
+.section-title {
+  margin-bottom: 20px;
+}
+
+/* GRID PRODUTOS */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 👈 3 por linha */
+  gap: 24px;
+}
+
+/* responsividade */
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+/* CARD */
+.card {
+  background: var(--card);
+  padding: 16px;
+  border-radius: 12px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/*  IMAGEM DO CARD  */
+
+.card-img {
+  width: 100%;
+  height: 160px;
+  background: #0b1430;
+  border-radius: 10px;
+  margin-bottom: 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* 👈 mantém proporção bonita */
+}
+
+.card h3 {
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.price {
+  color: #4cff9a;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.card button {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  background: var(--primary);
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/*  FOOTER COMPLETO  */
+
+.footer {
+  background: #050a18;
+  margin-top: 60px;
+}
+
+.footer-container {
+  padding: 50px 40px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+  justify-content: space-between;
+}
+
+.footer-col {
+  max-width: 220px;
+}
+
+.footer-logo {
+  font-family: 'Orbitron', sans-serif;
+  color: #6aa2ff;
+  margin-bottom: 10px;
+}
+
+.footer-col h4 {
+  margin-bottom: 12px;
+  color: white;
+}
+
+.footer-col p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.footer-col ul {
+  list-style: none;
+}
+
+.footer-col li {
+  margin-bottom: 8px;
+}
+
+.footer-col a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.footer-col a:hover {
+  color: white;
+}
+
+/* SOCIAL ICONS */
+
+.social-icons {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.icon {
+  width: 36px;
+  height: 36px;
+  background: #0f1b3d;
+  border-radius: 8px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text-decoration: none;
+  font-size: 18px;
+  transition: 0.25s;
+}
+
+.icon:hover {
+  transform: translateY(-3px);
+  background: var(--primary);
+}
+
+.contact-email {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* FOOTER BOTTOM */
+
+.footer-bottom {
+  border-top: 1px solid #101a3a;
+  text-align: center;
+  padding: 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
