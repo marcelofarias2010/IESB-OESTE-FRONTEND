@@ -1,142 +1,142 @@
-# 📂 Organizando Componentes com Pastas e Index
+# 🚀 Criando o Componente Logo e Dicas de Produtividade
 
-À medida que o nosso projeto cresce, a quantidade de arquivos também aumenta. Um
-único componente pode precisar de um arquivo JSX/TSX, um arquivo CSS, um arquivo
-de testes, um arquivo de histórias (Storybook), etc. Se deixarmos tudo solto na
-pasta `src/components`, rapidamente teremos uma bagunça!
-
-Nesta aula, vamos adotar uma arquitetura de pastas muito comum e profissional no
-mundo React.
+Nesta aula, vamos criar o nosso componente `<Logo />`. Em vez de começarmos um
+arquivo totalmente do zero, vamos aprender alguns truques de produtividade para
+reaproveitar a estrutura que já criamos e acelerar o nosso desenvolvimento!
 
 ---
 
-## 🏗️ 1. A Estrutura de Pastas por Componente
+## ⚡ 1. Produtividade no VS Code
 
-Em vez de ter arquivos soltos, vamos criar uma pasta para **cada componente**. O
-nome da pasta será o nome do componente (em PascalCase).
+### Duplicando Componentes
 
-Vamos reestruturar o nosso `<Container />` e o nosso `<Heading />`.
+Uma prática muito comum é copiar a pasta de um componente simples (como o
+`Heading`) e colar com o nome do novo componente (`Logo`). Isso já nos dá o
+arquivo `index.tsx` e o `styles.module.css` prontos!
 
-1. Dentro de `src/components/`, crie uma pasta chamada `Container`.
-2. Mova os arquivos do Container para dentro desta pasta.
-3. Repita o processo criando uma pasta `Heading` e movendo os arquivos do
-   Heading para lá.
+### O Truque do "Preserve Case" (Manter Maiúsculas/Minúsculas)
 
-A sua estrutura ficará assim:
+Ao duplicar, precisamos trocar a palavra `heading` por `logo` em todo o arquivo.
 
-```text
-src/
-└── components/
-    ├── Container/
-    │   ├── Container.tsx
-    │   └── Container.module.css
-    └── Heading/
-        ├── Heading.tsx
-        └── Heading.module.css
-```
+1. Selecione a palavra `Heading` e pressione `Ctrl + F` (ou `Cmd + F`).
+2. Digite `logo` no campo de substituição.
+3. **Dica de Ouro:** Clique no ícone de **"Preserve Case"** (um botão com as
+   letras `Aa` na caixinha de busca). Isso garante que onde estava `Heading`
+   (maiúsculo) vire `Logo`, e onde estava `heading` (minúsculo) vire `logo`.
+4. Clique em "Replace All".
 
-## 🪄 2. O Padrão `index.tsx` (O Truque de Mestre)
+### Extensão Recomendada: Auto Rename Tag
 
-Se deixarmos a estrutura como está acima, na hora de importar o componente no
-`App.tsx`, o caminho ficará redundante e feio:
+Vá na aba de extensões do VS Code e instale a **Auto Rename Tag**. Com ela,
+sempre que você alterar a tag de abertura (ex: de `<h1>` para `<div>`), ela
+altera automaticamente a tag de fechamento, poupando muito tempo!
 
-```tsx
-// ❌ Caminho redundante
-import { Container } from './components/Container/Container';
-```
+---
 
-Para resolver isso de forma elegante, vamos **renomear** o arquivo principal do
-componente (o `.tsx` ou `.jsx`) para `index.tsx`.
+## 🧩 2. Estruturando o Componente Logo
 
-O Node.js e o Vite são inteligentes: quando você aponta a importação para uma
-pasta, eles automaticamente procuram por um arquivo chamado `index` dentro dela.
+Diferente do `Heading`, o nosso componente `Logo` é "autocontido". Ele não
+precisa receber textos de fora via `props.children`, pois o ícone e o nome do
+app ("Chronos") serão fixos.
 
-1. Renomeie `Container.tsx` para `index.tsx`.
-2. Renomeie `Heading.tsx` para `index.tsx`.
+Vamos importar o ícone `TimerIcon` da biblioteca `lucide-react` e montar a
+estrutura.
 
-Agora a importação fica limpa!
-
-```jsx
-// ✅ O Vite procura automaticamente o index.tsx dentro da pasta Container!
-import { Container } from './components/Container';
-```
-
-## 🎨 3. Padronizando o nome do CSS
-
-Para facilitar ainda mais (especialmente quando quisermos copiar e colar uma
-pasta para criar um novo componente rapidamente), vamos padronizar o nome do
-arquivo CSS de todos os nossos componentes.
-
-Em vez de `Container.module.css` ou `Heading.module.css`, vamos chamar
-simplesmente de `styles.module.css` dentro da pasta de cada componente.
-
-A estrutura final perfeita de um componente ficará assim:
-
-```plan
-src/components/Container/
-├── index.tsx          # A lógica e o JSX do componente
-└── styles.module.css  # O estilo isolado do componente
-```
-
-## 📝 4. Como Ficaram Nossos Arquivos Finais?
-
-Com a mudança do nome do arquivo CSS, não podemos esquecer de atualizar as
-nossas importações dentro de cada `index.tsx`. Veja como ficam os códigos finais
-dos nossos dois componentes já refatorados:
-
-**Componente Heading** **Arquivo:** `src/components/Heading/index.tsx`
+**Arquivo:** `src/components/Logo/index.tsx` _(ou .jsx)_
 
 ```tsx
+import { TimerIcon } from 'lucide-react';
 import styles from './styles.module.css';
 
-type HeadingProps = {
-  children: React.ReactNode;
-};
-
-export function Heading({ children }: HeadingProps) {
-  return <h1 className={styles.heading}>{children}</h1>;
-}
-```
-
-**Componente Container** **Arquivo:** `src/components/Container/index.tsx`
-
-```tsx
-import styles from './styles.module.css';
-
-type ContainerProps = {
-  children: React.ReactNode;
-};
-
-export function Container({ children }: ContainerProps) {
+export function Logo() {
   return (
-    <div className={styles.container}>
-      <div className={styles.content}>{children}</div>
+    <div className={styles.logo}>
+      {/* Usamos a tag <a> provisoriamente. No futuro, trocaremos pelo Link do React Router */}
+      <a className={styles.logoLink} href='#'>
+        <TimerIcon />
+        <span>Chronos</span>
+      </a>
     </div>
   );
 }
 ```
 
-## ⚙️ 5. Dica de Produtividade no VS Code
+## 🎨 3. Estilizando e Entendendo o `camelCase`
 
-Quando você tiver dezenas de componentes, você terá dezenas de abas abertas no
-VS Code chamadas apenas `index.tsx`. Isso pode ser muito confuso!
+Por que usar `camelCase` no CSS Modules? No CSS tradicional, costumamos usar
+traços (ex: `.logo-link`). Porém, no CSS Modules, nós acessamos essas classes
+como propriedades de um objeto JavaScript. Se usarmos traço, teríamos que
+escrever `className={styles['logo-link']}`. Fica feio, não acha?
 
-Para resolver isso, podemos configurar o VS Code para mostrar o nome da pasta
-pai ao lado do nome do arquivo na aba.
+Por isso, **usamos camelCase** no CSS Modules (ex: `.logoLink`). Assim, podemos
+escrever de forma limpa: `className={styles.logoLink}`.
 
-1. Na raiz do projeto, crie ou abra a pasta `.vscode`.
-2. Abra o arquivo `settings.json` (se não existir, pode criar).
-3. Adicione a seguinte configuração:
+**Adicionando os Estilos e Efeitos** Vamos alinhar o ícone em cima do texto
+usando `flex-direction: column` e adicionar uma transição suave de cor quando o
+usuário passar o mouse por cima (`hover`).
 
-```json
-{
-  "workbench.editor.labelFormat": "short"
+**Arquivo:** `src/components/Logo/styles.module.css`
+
+```css
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.4rem;
+  padding-top: 3.2rem;
+}
+
+.logoLink {
+  display: flex;
+  flex-direction: column; /* Coloca o ícone em cima e o texto embaixo */
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  gap: 0.4rem;
+  font-size: 4.2rem;
+  text-decoration: none; /* Remove a linha padrão de links */
+  color: var(--primary);
+  transition: all 0.1s ease-in-out; /* Transição suave */
+}
+
+/* Efeito ao passar o mouse: escurece a cor primária em 50% */
+.logoLink:hover {
+  filter: brightness(50%);
+}
+
+/* Alterando o tamanho do ícone SVG direto pelo CSS */
+.logoLink svg {
+  width: 6.4rem;
+  height: 6.4rem;
 }
 ```
 
-Agora, as abas do seu VS Code mostrarão algo como `index.tsx Container` ou
-`index.tsx Heading`, facilitando muito a navegação!
+## 🧱 4. Integrando a Logo na Aplicação
 
-💡 **Dica Extra:** Use o atalho `Ctrl + P` (ou `Cmd + P` no Mac) para buscar
-arquivos rapidamente pelo nome da pasta. Ex: digite "container" e o VS Code
-mostrará o `index.tsx` e o `styles.module.css` daquela pasta.
+Agora que nossa Logo está pronta e estilizada, basta importá-la no nosso arquivo
+principal e colocá-la dentro do nosso `Container`!
+
+**Arquivo:** `src/App.tsx` (ou .jsx)
+
+```tsx
+import { Heading } from './components/Heading';
+import { Container } from './components/Container';
+import { Logo } from './components/Logo';
+
+import './styles/theme.css';
+import './styles/global.css';
+
+export function App() {
+  return (
+    <>
+      <Container>
+        <Logo />
+      </Container>
+
+      <Container>
+        <Heading>MENU</Heading>
+      </Container>
+    </>
+  );
+}
+```
