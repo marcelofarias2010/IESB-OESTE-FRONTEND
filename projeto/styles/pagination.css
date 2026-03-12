@@ -1,0 +1,36 @@
+.paginacao {
+  display: flex;
+  gap: 0.5em;
+  justify-content: center; /* Centraliza os botões na div */
+  margin-bottom: 1em;
+}
+
+.btn__pagination {
+  font-size: 16px;
+  font-family: 'poppins';
+  background-color: var(--dark-orange);
+  border: none;
+  color: var(--white);
+  padding: 0.5em;
+  width: 40px; /* Aumentei um pouco para melhor espaçamento */
+  height: 40px; /* Define altura fixa para manter quadrado */
+  display: flex; /* Torna o botão um flex container */
+  align-items: center; /* Centraliza verticalmente */
+  justify-content: center; /* Centraliza horizontalmente */
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: center; /* Garante que o texto fique centralizado */
+  transition: all 0.4s;
+}
+
+.btn__pagination:hover{
+  background-color: var(--blue-hover);
+}
+
+.btn__pagination i {
+  font-size: 15px;
+}
+
+.ativo {
+  background-color: var(--blue-hover);
+}

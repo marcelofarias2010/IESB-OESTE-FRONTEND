@@ -1,0 +1,83 @@
+/* Starst WPP */
+
+#btn-wpp {
+    position: fixed;
+    bottom: 40px; /* Distância do fundo */
+    right: 20px; /* Distância da direita */
+    z-index: 5;
+  }
+  
+  .btn-wpp {
+    display: flex; /* Usado para centralizar o conteúdo */
+    justify-content: center;
+    align-items: center;
+    width: 70px; /* Largura do botão */
+    height: 70px; /* Altura do botão */
+    background-color: #25d366; /* Cor de fundo */
+    border-radius: 50%; /* Bordas arredondadas */
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15); /* Sombra do botão */
+    text-decoration: none; /* Remove underline do link */
+    color: #fff; /* Cor do texto */
+    transition: transform 0.5s ease; /* Transição ao passar o mouse */
+  }
+  
+  .btn-wpp img {
+    width: 100%; /* Largura da imagem */
+    height: auto; /* Altura automática para manter a proporção */
+  }
+  
+  /* Animação de pulsar */
+  .btn-wpp:before {
+    content: '';
+    position: absolute;
+    z-index: -1; /* Coloca atrás do botão */
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%; /* Igual ao botão */
+    height: 100%; /* Igual ao botão */
+    background-color: rgba(37, 211, 102, 0.5); /* Cor semi-transparente */
+    border-radius: 50%; /* Bordas arredondadas */
+    animation: pulse-border 1500ms ease-out infinite; /* Animação pulsar */
+  }
+  
+  @keyframes pulse-border {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 0;
+    }
+  }
+  
+  @media screen and (min-width: 768px) {
+    
+    #btn-wpp {
+        bottom: 15px; /* Distância do fundo */
+        right: 15px; /* Distância da direita */
+      }
+      
+      .btn-wpp {
+        width: 80px; /* Largura do botão */
+        height: 80px; /* Altura do botão */
+      }
+
+  }
+
+  @media screen and (min-width: 1025px) {
+    
+    #btn-wpp {
+        bottom: 50px; /* Distância do fundo */
+        right: 50px; /* Distância da direita */
+      }
+      
+      .btn-wpp {
+        width: 100px; /* Largura do botão */
+        height: 100px; /* Altura do botão */
+      }
+
+  }
+
+  /* ENDS WPP */

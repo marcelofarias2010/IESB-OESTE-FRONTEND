@@ -1,0 +1,97 @@
+.categorias {
+    display: none;
+}
+
+.categorias ul li a{
+    text-transform: uppercase;
+}
+
+@media screen and (min-width: 1025px) {
+
+    /* Categorias */
+    .categorias {
+        font-size: var(--font-nav-descktop);
+        display: flex;
+        justify-content: space-around;
+        margin-top: 2px;
+        margin-bottom: 3px;
+    }
+
+    .categorias ul {
+        display: flex;
+        flex-wrap: wrap;
+        padding: 0;
+        list-style: none;
+        justify-content: center;
+    }
+
+    .categorias li {
+        position: relative;
+        padding: 10px 0;
+        text-align: center;
+    }
+
+    .categorias li a {
+        color: rgba(43, 45, 128, 1);
+        padding: 10px;
+        text-decoration: none;
+        transition: all 0.5s ease;
+        font-size: 18px;
+    }
+
+    /* Hover nos links da categoria */
+    .categorias li a:hover,
+    .categorias li:hover>a {
+        background-color: rgb(220, 220, 245);
+        color: rgb(2, 3, 73);
+
+    }
+
+    /* Submenu */
+    .submenu {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        left: 0;
+        top: 99%;
+        /* Coloca o submenu diretamente abaixo do item pai */
+        z-index: 4;
+        opacity: 0;
+        visibility: hidden;
+        background-color: rgb(220, 220, 245);
+        white-space: nowrap;
+        min-width: 175px;
+        transition: opacity 0.5s ease;
+    }
+
+    .submenu li {
+        width: 100%;
+        margin: 0;
+        /* Remove a margem entre os itens */
+        padding: 0;
+        /* Remove o padding entre os itens */
+    }
+
+    .submenu a {
+        display: block;
+        text-align: left;
+        padding: 10px 0;
+        /* Define o padding apenas para cima e para baixo */
+        margin: 0;
+        /* Remove margem ao redor dos links */
+        white-space: nowrap;
+        /* Evita quebra de linha */
+    }
+
+    /* Exibição do submenu ao passar o mouse */
+    li:hover>ul.submenu,
+    .categorias li:hover .submenu {
+        opacity: 1;
+        /* Torna o submenu visível */
+        visibility: visible;
+        /* Mantém a visibilidade do submenu */
+        background-color: rgb(220, 220, 245);
+        /* Cor do submenu */
+    }
+
+}

@@ -1,0 +1,57 @@
+/* Connecting the header.css to our main css file, linking here will be more 
+efficient when loading the website */
+/* Header padrao  */
+@import url("./styles/header.css");
+/* Dropdown com as categorias  */
+@import url("./styles/categorias.css");
+/* zap zap  */
+@import url("./styles/wpp.css");
+/* btntop  */
+@import url("./styles/btntop.css");
+/* carrossel com imagens  */
+@import url('./styles/carrossel.css');
+/* cards para produtos  */
+@import url("./styles/secaoCards.css");
+/* footer padrao  */
+@import url("./styles/footer.css");
+/* main da tela de contato */
+@import url("./styles/contato.css");
+/* main do pagination */
+@import url("./styles/pagination.css");
+/* main da barra de pesquisa */
+@import url("./styles/barraPesquisa.css");
+
+@import url("./styles/promocao.css");
+
+/* REMIXICONS */
+@import url(https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css);
+
+/* Resete */
+@import url("./styles/reset.css");
+
+/* Importing the font 'Poppins' */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+/* Variables will be placed here, being able to be used in all css files (as long as they are linked here).
+All fonts and colors must be placed here for organization purpose. */
+:root {
+    --primary-font: "Poppins", sans-serif;
+
+    --font-nav-mobile: 16px;
+    --font-nav-ipad: 24px;
+    --font-nav-descktop: 20px;
+
+    --cor-de-fundo: #FFFFFF;
+    --blue: #2B2D80;
+    --blue-hover: #2e30a4;
+    --gray: #333333;
+    --black: #000000;
+    --orange: #EB9B00;
+    --white: #FFFFFF;
+    --dark-orange: #ED6F22;
+    --green: #3AB538;
+
+    --index-menu-close: 0;
+    --index-menu-open: 10;
+}
+
