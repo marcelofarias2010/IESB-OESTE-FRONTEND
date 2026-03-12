@@ -1,0 +1,51 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+header {
+    background-color: #1fcc4e;
+    color: white;
+    display: flex;
+    justify-content: space-between; 
+    align-items: center;
+    padding: 10px 40px;
+}
+
+main {
+    background-color: red;
+    padding: 50px;
+    display: flex;
+    justify-content: center; 
+    gap: 20px; 
+}
+
+.produto {
+    background-color: white;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center; 
+    width: 200px; 
+}
+
+del {
+    color: gray;
+    font-size: 12px;
+}
+
+button {
+    background-color: red;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    width: 100%;
+}
+
+footer {
+    background-color: #1fcc4e;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
