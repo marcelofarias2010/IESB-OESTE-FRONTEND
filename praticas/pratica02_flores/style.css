@@ -1,0 +1,97 @@
+body{
+margin:0;
+font-family:'Poppins', sans-serif;
+background:#f3f3f3;
+}
+
+/*HEADER*/
+.header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:20px;
+background:white;
+box-shadow:0 2px 5px rgba(0,0,0,0.1);
+}
+.logo{
+font-family:'Playfair Display', serif;
+color:#3c7a4a;
+}
+
+/*HERO*/
+.hero{
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+text-align:center;
+background:#d7a4d6;
+padding:40px;
+}
+.hero h1{
+font-family:'Playfair Display', serif;
+color:#2f6b3d;
+}
+.hero button{
+margin-top:10px;
+padding:10px 20px;
+background:#3c7a4a;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+/*GRADE PRODUTOS*/
+
+.produtos{
+display:flex;
+flex-wrap:wrap;
+gap:25px;
+justify-content:center;
+padding:40px;
+}
+
+/*CARD*/
+.card{
+display:flex;
+flex-direction:column;
+align-items:center;
+background:white;
+width:260px;
+padding:15px;
+border-radius:12px;
+box-shadow:0 4px 8px rgba(0,0,0,0.1);
+}
+.card img{
+width:100%;
+border-radius:10px;
+}
+.preco-antigo{
+text-decoration:line-through;
+color:gray;
+}
+.preco{
+color:#2f6b3d;
+font-size:20px;
+font-weight:bold;
+}
+.card button{
+margin-top:10px;
+background:#3c7a4a;
+color:white;
+border:none;
+padding:8px 14px;
+border-radius:6px;
+cursor:pointer;
+}
+
+/*FOOTER*/
+.footer{
+display:flex;
+justify-content:space-around;
+align-items:center;
+background:#3c7a4a;
+color:white;
+padding:20px;
+flex-wrap:wrap;
+}
