@@ -1,0 +1,260 @@
+.secaoMaisProcurados {
+    width: 95%;
+    margin: auto;
+    min-height: 68vh;
+}
+
+.secaoCard__titulo {
+    font-size: 20px;
+    font-weight: 500;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.secaoCard__hr {
+    margin: 0;
+    margin-bottom: 1em;
+    background-color: black;
+    border: none;
+    height: 2px;
+}
+
+/* Container dos cards usando CSS Grid */
+.secaoCard__main {
+    display: grid;
+    gap: 1em;
+    /* Espaçamento padrão entre os cards */
+    margin-bottom: 1em;
+}
+
+/* Estilos base para os cards */
+.cardProduto {
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 10px 5px rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+    text-align: center;
+    justify-content: space-between;
+    gap: 0.5em;
+    padding: 0.5em;
+    height: 100%;
+    /* Garante que o card ocupe toda a altura da linha */
+}
+
+/* Imagem do card */
+.cardProduto_img {
+    padding: 0.5em;
+    height: 35vw;
+    object-fit: contain;
+    max-height: 200px;
+    /* Limita a altura máxima da imagem */
+}
+
+/* Descrição do card */
+.cardProduto_descricao {
+    color: var(--black);
+    font-size: 16px;
+    margin: 0.5em 0;
+    height: 3em;
+    /* Altura fixa para a descrição */
+    line-height: 1.5em;
+    text-transform: uppercase;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    /* Limita o texto a 2 linhas */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Preço do card */
+.cardProduto_preco {
+    font-size: 16px;
+    color: var(--blue);
+    font-weight: 600;
+}
+
+/* Código do card */
+.cardProduto_cod {
+    font-size: 1em;
+    font-weight: 200;
+    width: 95%;
+    white-space: pre-line;
+}
+
+/* Link do card */
+.cardProduto_link {
+    color: var(--white);
+    border-radius: 10px;
+    font-size: 0.8em;
+    background-color: var(--dark-orange);
+    text-decoration: none;
+    padding: 0.5em;
+    font-size: 16px;
+}
+
+.cardProduto_link:active {
+    background-color: var(--blue);
+}
+
+.secaoCard__main {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1em;
+    /* Espaçamento padrão */
+    justify-self: center;
+}
+
+.cardProduto {
+    width: 160px;
+    height: 315px;
+}
+
+.cardProduto_img {
+    height: 30vw;
+}
+
+.cardProduto {
+    padding: 0.5em;
+    /* Padding menor no mobile */
+}
+
+@media screen and (min-width: 430px) {
+    .cardProduto {
+        width: 175px;
+        height: 350px;
+    }
+}
+
+@media screen and (min-width: 590px) {
+    .secaoCard__main {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1em;
+        /* Espaçamento padrão */
+        justify-self: center;
+    }
+
+    .cardProduto {
+        width: 155px;
+        height: 375px;
+    }
+}
+
+/* Versão tablet: 4 cards por linha */
+@media screen and (min-width: 768px) {
+    .secaoCard__main {
+        grid-template-columns: repeat(4, 1fr);
+        /* 4 colunas */
+        gap: 1.5em;
+        /* Espaçamento padrão */
+        justify-self: center;
+    }
+
+    .cardProduto {
+        width: 150px;
+        height: 370px;
+    }
+
+    .cardProduto_img {
+        height: 20vw;
+    }
+
+    .secaoMaisProcurados {
+        min-height: 75vh;
+    }
+
+    .secaoMaisProcurados {
+        padding-top: 1em;
+    }
+
+    .secaoMaisProcurados {
+        padding-top: 0;
+    }
+
+}
+
+/* Versão desktop: 4 cards por linha */
+@media screen and (min-width: 1024px) {
+    .secaoMaisProcurados {
+        width: 75%;
+        min-height: 68vh;
+        padding-top: 0;
+    }
+
+    .secaoCard__main {
+        grid-template-columns: repeat(4, 1fr);
+        /* 4 colunas */
+        gap: 1.5em;
+        /* Espaçamento padrão */
+        justify-self: center;
+    }
+
+    .cardProduto {
+        width: 150px;
+        height: 350px;
+    }
+
+    .cardProduto_img {
+        height: 15vw;
+    }
+
+    .cardProduto_link {
+        padding: 0.5em;
+        font-size: 18px;
+        transition: 0.5s;
+    }
+
+    .cardProduto_link:hover {
+        background-color: var(--blue);
+    }
+}
+
+@media screen and (min-width: 1200px) {
+    .secaoCard__main {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5em;
+        /* Espaçamento padrão */
+        justify-self: center;
+    }
+
+    .cardProduto {
+        width: 200px;
+        height: 375px;
+        justify-self: center;
+    }
+}
+
+@media screen and (min-width: 1400px) {
+    .secaoCard__main {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1em;
+        row-gap: 1em;
+        /* Espaçamento padrão */
+        justify-self: center;
+    }
+
+    .cardProduto {
+        width: 195px;
+        height: 390px;
+        justify-self: center;
+    }
+}
+
+@media screen and (min-width: 1800px) {
+    .secaoMaisProcurados {
+        min-height: 35vh;
+    }
+
+    .secaoCard__main {
+        grid-template-columns: repeat(5, 1fr);
+        /* 5 colunas */
+        gap: 1.5em;
+        /* Espaçamento padrão */
+        justify-self: center;
+    }
+
+    .cardProduto {
+        width: 240px;
+        height: 390px;
+        justify-self: center;
+    }
+}
