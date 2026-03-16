@@ -1,0 +1,144 @@
+/* PALETA DE CORES */
+:root {
+    --primaria: #A8DADC;     /* pastel */
+    --secundaria: #F4A261;   /* pastel */
+    --neutra: #F1FAEE;
+}
+
+/* RESET */
+body {
+    margin: 0;
+    background: var(--neutra);
+    font-family: 'Inter', sans-serif;
+}
+
+/* HEADER */
+.header {
+    background: #111;
+    color: white;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 15px 60px;
+}
+
+.logo {
+    font-family: 'Poppins', sans-serif;
+    font-size: 26px;
+}
+
+.carrinho {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 22px;
+}
+
+.contador {
+    background: var(--secundaria);
+    padding: 3px 8px;
+    border-radius: 50%;
+    color: white;
+    font-size: 12px;
+}
+
+/* HERO */
+.hero {
+    background: var(--primaria);
+
+    height: 260px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    font-size: 28px;
+    font-family: 'Poppins';
+    color: #1d3557;
+}
+
+/* SEÇÃO PRODUTOS */
+.produtos {
+    width: 1100px;
+    margin: auto;
+    padding: 40px 0;
+}
+
+.titulo-secao {
+    text-align: left;
+    font-family: 'Poppins';
+    font-size: 22px;
+    margin-bottom: 30px;
+}
+
+/* GRID DE PRODUTOS */
+.grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    justify-content: center;
+}
+
+/* CARD */
+.card {
+    background: white;
+    width: 300px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    padding: 20px;
+    border-radius: 10px;
+
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.10);
+}
+
+.card img {
+    width: 130px;
+    height: 130px;
+    object-fit: contain;
+    margin-bottom: 10px;
+}
+
+.nome-produto {
+    font-size: 15px;
+    margin: 8px 0;
+}
+
+.preco .antigo {
+    text-decoration: line-through;
+    color: #777;
+    font-size: 13px;
+}
+
+.preco .novo {
+    color: var(--secundaria);
+    font-weight: bold;
+    font-size: 16px;
+    margin-left: 6px;
+}
+
+button {
+    margin-top: 10px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--primaria);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+button:hover {
+    opacity: 0.85;
+}
+
+/* FOOTER */
+.footer {
+    background: var(--primaria);
+    text-align: center;
+    padding: 25px;
+    font-size: 14px;
+}
