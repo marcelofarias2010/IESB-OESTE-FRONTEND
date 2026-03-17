@@ -1,0 +1,262 @@
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Poppins', sans-serif;
+}
+
+body{
+background:#f5f5f5;
+}
+
+
+/* HEADER */
+
+.header{
+
+display:flex;
+justify-content:space-between;
+align-items:center;
+
+padding:20px 8%;
+
+background:linear-gradient(90deg,#4b00ff,#8f00ff);
+
+color:white;
+
+box-shadow:0 4px 10px rgba(0,0,0,0.2);
+
+}
+
+.logo{
+font-size:22px;
+font-weight:600;
+}
+
+.menu a{
+
+margin:0 15px;
+text-decoration:none;
+color:white;
+font-weight:400;
+
+}
+
+.menu a:hover{
+opacity:0.7;
+}
+
+.user-buttons button{
+
+margin-left:10px;
+padding:8px 14px;
+
+border:none;
+border-radius:6px;
+
+cursor:pointer;
+
+font-weight:500;
+
+}
+
+.btn-login{
+background:white;
+color:#4b00ff;
+}
+
+.btn-cadastro{
+background:#ffd700;
+}
+
+
+
+/* BANNER */
+
+.banner{
+
+text-align:center;
+
+padding:50px 10%;
+
+background:white;
+
+}
+
+.banner h1{
+
+font-size:32px;
+margin-bottom:10px;
+
+}
+
+.banner p{
+
+color:#555;
+
+}
+
+
+/* PRODUTOS */
+
+.produtos{
+
+padding:60px 10%;
+
+display:grid;
+
+grid-template-columns:repeat(3,1fr);
+
+gap:40px;
+
+}
+
+
+/* CARD */
+
+.card{
+
+background:white;
+
+border-radius:12px;
+
+padding:25px;
+
+text-align:center;
+
+box-shadow:0 10px 25px rgba(0,0,0,0.08);
+
+transition:0.3s;
+
+}
+
+.card:hover{
+
+transform:translateY(-10px);
+
+box-shadow:0 20px 40px rgba(0,0,0,0.15);
+
+}
+
+.card img{
+
+width:100%;
+height:220px;
+object-fit:contain;
+
+margin-bottom:15px;
+
+}
+
+.card h3{
+
+margin-bottom:10px;
+
+}
+
+
+.precos{
+
+margin-bottom:15px;
+
+}
+
+.antigo{
+
+text-decoration:line-through;
+
+color:#888;
+
+margin-right:10px;
+
+}
+
+.novo{
+
+color:red;
+
+font-weight:600;
+
+font-size:18px;
+
+}
+
+
+.btn-carrinho{
+
+background:#4b00ff;
+
+color:white;
+
+border:none;
+
+padding:10px 20px;
+
+border-radius:8px;
+
+cursor:pointer;
+
+transition:0.3s;
+
+}
+
+.btn-carrinho:hover{
+
+background:#2f00aa;
+
+}
+
+
+/* FOOTER */
+
+.footer{
+
+background:#111;
+
+color:white;
+
+margin-top:60px;
+
+}
+
+.footer-container{
+
+display:grid;
+
+grid-template-columns:repeat(4,1fr);
+
+padding:50px 10%;
+
+gap:30px;
+
+}
+
+.footer-col h3{
+
+margin-bottom:15px;
+
+}
+
+.footer-col p{
+
+margin-bottom:8px;
+
+font-size:14px;
+
+color:#ccc;
+
+}
+
+.copyright{
+
+text-align:center;
+
+padding:15px;
+
+border-top:1px solid #333;
+
+font-size:13px;
+
+color:#aaa;
+
+}
