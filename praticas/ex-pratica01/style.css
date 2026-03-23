@@ -1,0 +1,206 @@
+@import url('https://fonts.googleapis.com/css2?family=Iceland&display=swap');
+
+@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&family=Iceland&family=Londrina+Outline&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Iceland", sans-serif;
+}
+
+body {
+  background-color: #c4c3c3;
+}
+
+
+.header {
+  background-color: #1f1b2e;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 15px 30px;
+  color: white;
+}
+
+.logo img {
+  width: 95px;
+}
+
+.cart {
+  font-size: 30px;
+  cursor: pointer;
+}
+
+
+.banner {
+  background-image: url("./image/banner.jpg");
+  background-size: cover;
+  background-position: center;
+
+  height: 400px;
+  position: relative;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+.banner-overlay {
+  position: absolute;
+
+  top: 50%;
+  left: 61%;
+
+  transform: translate(-50%, -50%);
+
+  width: 65%;
+  text-align: center;
+}
+
+.banner-overlay h2 {
+  color: #222;
+  font-size: 35px;
+  font-weight: bold;
+}
+
+
+.promo {
+  text-align: center;
+  padding: 25px;
+  font-weight: bold;
+  font-size: 33px;
+}
+
+.products-container {
+
+  display: flex;
+  flex-wrap: wrap;
+
+  justify-content: center;
+
+  gap: 30px;
+
+  padding: 40px 80px;
+}
+
+.card {
+
+  background-color: #ffffff;
+
+  width: 300px;
+
+  padding: 20px;
+
+  text-align: center;
+
+  border-radius: 10px;
+
+  box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+
+  min-height: 330px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  transition: 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0px 6px 15px rgba(0,0,0,0.15);
+}
+
+.card img {
+
+  width: 100%;
+  height: 140px;
+
+  object-fit: contain;
+
+  margin-bottom: 10px;
+}
+
+.card p {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.price {
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+.card button {
+
+  background-color: #2e3a59;
+
+  color: white;
+
+  border: none;
+
+  padding: 10px;
+
+  border-radius: 6px;
+
+  cursor: pointer;
+
+  width: 100%;
+
+  font-weight: bold;
+
+  transition: 0.3s;
+
+  font-size: 25px;
+}
+
+
+.card button:hover {
+  background-color: #1f1b2e;
+}
+
+
+.ver-mais {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.ver-mais button {
+  padding: 12px 30px;
+  border: none;
+  background-color: #1f1b2e;
+  color: rgb(255, 255, 255);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 35px;
+  font-family: "Londrina Outline", sans-serif;
+  font-style: oblique;
+}
+
+.footer {
+
+  background-color: #1f1b2e;
+
+  color: white;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 25px 60px;
+}
+
+.footer img {
+  width: 200px;
+}
+
+.social img {
+  width: 62px;
+  margin-left: 20px;
+  cursor: pointer;
+}
