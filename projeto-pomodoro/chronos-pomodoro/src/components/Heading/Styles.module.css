@@ -1,0 +1,7 @@
+/* src/components/Heading.module.css (ou global, dependendo de como você estruturou) */
+.heading {
+  display: flex; /* Ativa o Flexbox */
+  justify-content: center; /* Centraliza o conteúdo horizontalmente */
+  align-items: center; /* Centraliza o conteúdo verticalmente (alinhamento perfeito) */
+  gap: 2.4rem; /* Adiciona 24px de espaço entre o texto e o botão/ícone */
+}
