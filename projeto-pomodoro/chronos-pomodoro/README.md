@@ -1,147 +1,160 @@
-# 🪝 Dominando Efeitos Colaterais com o `useEffect`
+# 💾 Persistência com LocalStorage e Ícones Dinâmicos
 
-Na aula passada, vimos que manipular o DOM diretamente ou buscar dados externos
-(ações que o React não monitora nativamente) são considerados **Efeitos
-Colaterais**. Tentar fazer isso diretamente no corpo do componente ou dentro de
-um `setState` causa bugs de assincronicidade ou quebra as regras do React.
+Até agora, nosso alternador de temas funciona perfeitamente, mas tem um
+problema: se o usuário recarregar a página (F5), o tema volta para o `dark`,
+pois o estado do React é reiniciado.
 
-Para resolver isso, o React nos fornece um Hook específico: o `useEffect`.
+Nesta aula, vamos aprender a salvar essa preferência no navegador do usuário
+utilizando o `localStorage` e também vamos fazer o ícone do botão mudar
+dinamicamente (Sol/Lua) dependendo do tema atual.
 
 ---
 
-## 🛠️ 1. As Três Formas de Usar o `useEffect`
+## 🧹 1. Limpeza Inicial
 
-O `useEffect` recebe dois parâmetros:
+Antes de começar, vamos limpar o nosso componente `Menu`. Remova todos os
+`console.log`, a função de `cleanup` do `useEffect` (pois não estamos deixando
+"sujeira" na página com o nosso atributo HTML) e aquele `<h1>{theme}</h1>` que
+estávamos usando apenas para debugar. Mantenha o código limpo e focado no que
+importa!
 
-1. Uma função (o efeito em si que você quer executar).
-2. Um array de dependências (opcional), que dita **quando** esse efeito deve
-   rodar.
+---
 
-Dependendo de como você passa esse array, o `useEffect` se comporta de três
-maneiras diferentes.
+## 📦 2. Salvando o Tema no `localStorage`
 
-### A) Sem Array de Dependências (Cuidado! ⚠️)
+O `localStorage` é um banco de dados simples, embutido no navegador, que guarda
+informações no formato `chave: valor` (sempre como strings). Ele é perfeito para
+salvar preferências de usuários, como o tema escolhido.
 
-Se você não passar o segundo parâmetro, a função executará **toda vez que o
-componente for renderizado**.
-
-```tsx
-useEffect(() => {
-  console.log(
-    'Executado toda vez que qualquer estado/prop mudar e o componente renderizar',
-  );
-});
-```
-
-_Geralmente evitamos essa forma, pois se um componente renderiza muito, seu
-efeito colateral (como uma chamada de API) vai rodar repetidas vezes sem
-necessidade, travando a aplicação._
-
-**B) Com Array de Dependências Vazio `[]` (O "On Mount")** Se você passar um
-array vazio, você está dizendo ao React: _"Esse efeito não depende de nenhuma
-variável para atualizar"_. Portanto, ele só vai executar **uma única vez**, logo
-após o componente ser montado (aparecer na tela) pela primeira vez.
+Como já temos um `useEffect` que é executado **toda vez que o tema muda**, esse
+é o lugar perfeito para avisar o `localStorage` da mudança:
 
 ```tsx
 useEffect(() => {
-  console.log('Executa APENAS uma vez, quando o componente é montado na tela');
-}, []);
-```
-
-_Muito útil para buscar os dados iniciais de uma API logo que o usuário entra na
-página._
-
-**C) Com Variáveis no Array de Dependências (O que usaremos! ✅)** Se você
-passar uma variável dentro do array, o React vai observar essa variável. O
-efeito será executado na primeira renderização E **toda vez que essa variável
-específica mudar de valor**.
-
-```tsx
-useEffect(() => {
-  console.log('O tema mudou para:', theme);
-  // É AQUI o lugar correto para manipular o DOM com o valor atualizado!
+  // Atualiza o HTML
   document.documentElement.setAttribute('data-theme', theme);
-}, [theme]); // O efeito "escuta" o estado `theme`
-```
 
-Dessa forma, resolvemos nosso problema de atraso! Agora, sempre que o botão de
-tema for clicado, o estado `theme` muda. O React percebe a mudança, renderiza a
-tela e, só depois disso, aciona nosso `useEffect` passando o valor já atualizado
-para o HTML.
-
-## 🧹 2. A Função de Limpeza (Clean-up Function)
-
-E se o nosso efeito colateral for iniciar um cronômetro (`setInterval`) ou
-adicionar um ouvinte de eventos global (`addEventListener`)? Se o componente for
-destruído (o usuário mudar de página, por exemplo), esse cronômetro continuará
-rodando em background, causando vazamento de memória e travamentos (a "sujeira"
-da qual falamos).
-
-Para evitar isso, o `useEffect` permite que você retorne uma função de dentro
-dele. Essa é a **Clean-up Function** (Função de Limpeza).
-
-```tsx
-useEffect(() => {
-  // 1. O efeito roda e cria algo (ex: um setInterval)
-
-  return () => {
-    // 2. O React engatilha essa função e a executa ANTES de rodar
-    // o efeito novamente ou ANTES de destruir o componente da tela.
-    // Aqui é onde você limpa a "sujeira" (ex: clearInterval).
-    console.log('Limpando o efeito anterior antes de atualizar...');
-  };
+  // Salva no navegador: chave 'theme', valor 'dark' ou 'light'
+  localStorage.setItem('theme', theme);
 }, [theme]);
 ```
 
-**O Ciclo de Vida do nosso Menu ao clicar no botão:**
+## 🦥 3. Recuperando o Tema (Lazy Initialization)
 
-1. Você clica e muda o `theme` para `light`.
-2. O React prepara para rodar o `useEffect` com o novo valor.
-3. ANTES disso, ele roda a função de limpeza (o `return`) do `useEffect`
-   anterior (que ainda era `dark`).
-4. Ele roda o novo `useEffect` aplicando o tema `light` no HTML.
+Agora que estamos salvando, precisamos avisar o nosso `useState` para, ao invés
+de começar sempre como `'dark'`, ir primeiro procurar se já existe algo salvo no
+`localStorage`.
 
-## 🚀 3. O Código Final do Menu
+Como buscar dados no navegador pode ser (levemente) custoso, usaremos a
+**Inicialização Preguiçosa (Lazy Initialization)** passando uma função para o
+`useState`, garantindo que essa busca ocorra apenas na primeira vez que o
+componente for montado:
 
-Aqui está o código atualizado do nosso componente Menu, aplicando o `useEffect`
-da maneira correta e removendo a "gambiarra" da aula passada.
+```tsx
+const [theme, setTheme] = useState<AvailableThemes>(() => {
+  const storageTheme = localStorage.getItem('theme');
+
+  // Se tiver algo no storage, usa. Se retornar null, o padrão é 'dark'
+  return (storageTheme as AvailableThemes) || 'dark';
+});
+```
+
+## 🌓 4. Trocando o Ícone (A técnica do Dicionário/Mapa)
+
+Se estamos no tema Escuro, queremos exibir o ícone de Sol (indicando que o
+clique levará ao tema claro). Se estamos no tema Claro, queremos a Lua.
+
+A forma mais instintiva seria usar um `if/else` ou um ternário diretamente no
+JSX (`theme === 'dark' ? <SunIcon /> : <MoonIcon />`). Porém, existe uma forma
+muito mais limpa e escalável de fazer isso no JavaScript: criando um **objeto de
+mapeamento**.
+
+```tsx
+// Mapeamos qual ícone deve aparecer baseado no tema ATUAL
+const nextThemeIcon = {
+  dark: <SunIcon />,
+  light: <MoonIcon />,
+};
+
+// No JSX, basta chamar o objeto passando o estado atual como chave:
+// {nextThemeIcon[theme]}
+```
+
+## 🚀 5. O Código Final do App
+
+Com todas essas implementações, nosso componente de `Menu` agora tem
+persistência de dados e uma interface que reage perfeitamente ao estado.
+Lembre-se de importar o `MoonIcon` lá do `lucide-react`!
 
 **Arquivo:** `src/components/Menu/index.tsx`
 
 ```tsx
-import { HistoryIcon, HouseIcon, SettingsIcon, SunIcon } from 'lucide-react';
+import {
+  HistoryIcon,
+  HouseIcon,
+  MoonIcon,
+  SettingsIcon,
+  SunIcon,
+} from 'lucide-react';
 import styles from './styles.module.css';
 import { useState, useEffect } from 'react';
 
 type AvailableThemes = 'dark' | 'light';
 
 export function Menu() {
-  const [theme, setTheme] = useState<AvailableThemes>('dark');
+  // 1. Busca o valor inicial do localStorage
+  const [theme, setTheme] = useState<AvailableThemes>(() => {
+    const storageTheme = localStorage.getItem('theme');
+    return (storageTheme as AvailableThemes) || 'dark';
+  });
 
-  // A função de clique agora apenas muda o estado. Ponto.
+  // 2. Mapeamento de ícones (Evita ifs/ternários no JSX)
+  const nextThemeIcon = {
+    dark: <SunIcon />,
+    light: <MoonIcon />,
+  };
+
   function handleThemeChange(
     event: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
   ) {
     event.preventDefault();
-
-    setTheme(prevTheme => {
-      return prevTheme === 'dark' ? 'light' : 'dark';
-    });
+    setTheme(prevTheme => (prevTheme === 'dark' ? 'light' : 'dark'));
   }
 
-  // O Efeito Colateral que escuta o estado e reflete no HTML
+  // 3. Efeito colateral: Muda o HTML e salva no localStorage
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-
-    // Função de limpeza (apenas didática neste momento)
-    return () => {
-      console.log('Limpando efeito anterior...');
-    };
-  }, [theme]); // Array de dependências observando o 'theme'
+    localStorage.setItem('theme', theme);
+  }, [theme]);
 
   return (
     <nav className={styles.menu}>
-      {/* ... JSX dos links (inalterado) ... */}
+      <a
+        className={styles.menuLink}
+        href='#'
+        aria-label='Ir para a Home'
+        title='Ir para a Home'
+      >
+        <HouseIcon />
+      </a>
+
+      <a
+        className={styles.menuLink}
+        href='#'
+        aria-label='Ver Histórico'
+        title='Ver Histórico'
+      >
+        <HistoryIcon />
+      </a>
+
+      <a
+        className={styles.menuLink}
+        href='#'
+        aria-label='Configurações'
+        title='Configurações'
+      >
+        <SettingsIcon />
+      </a>
 
       <a
         className={styles.menuLink}
@@ -150,13 +163,130 @@ export function Menu() {
         title='Mudar Tema'
         onClick={handleThemeChange}
       >
-        <SunIcon />
+        {/* Renderiza o ícone dinamicamente baseado na chave atual */}
+        {nextThemeIcon[theme]}
       </a>
     </nav>
   );
 }
 ```
 
-Nosso alternador de tema está funcionando perfeitamente sem atrasos! No entanto,
-se o usuário recarregar a página (F5), o tema volta para o `dark`, pois o estado
-é reiniciado.
+## 🔒 6. Retornando às Boas Práticas (`StrictMode`) e Código Final
+
+No início das nossas aulas sobre `useEffect`, nós removemos temporariamente o
+`<StrictMode>` do nosso arquivo de inicialização para facilitar a visualização
+dos `console.log` sem as renderizações duplas que ele causa em modo de
+desenvolvimento.
+
+Agora que nossa lógica está pronta, limpa e funcional, é **fundamental**
+devolvermos o `<StrictMode>` para o código. Ele é o nosso cão de guarda,
+ajudando a identificar potenciais problemas e práticas obsoletas no nosso app.
+
+**Arquivo de inicialização (ex: `main.tsx` ou `index.tsx`):**
+
+```jsx
+import { createRoot } from 'react-dom/client';
+import { App } from './App.tsx';
+import { StrictMode } from 'react';
+
+createRoot(document.getElementById('root')!).render(
+  <>
+    <StrictMode>
+      <App />
+    </StrictMode>
+  </>,
+);
+```
+
+E aqui está o código final, polido e exato do nosso alternador de temas
+persistente:
+
+**Arquivo:** `src/components/Menu/index.tsx`
+
+```tsx
+import {
+  HistoryIcon,
+  HouseIcon,
+  MoonIcon,
+  SettingsIcon,
+  SunIcon,
+} from 'lucide-react';
+import styles from './styles.module.css';
+import { useState, useEffect } from 'react';
+
+type AvailableThemes = 'dark' | 'light';
+
+export function Menu() {
+  // 1. Inicialização preguiçosa buscando do localStorage
+  const [theme, setTheme] = useState<AvailableThemes>(() => {
+    const storageTheme =
+      (localStorage.getItem('theme') as AvailableThemes) || 'dark';
+    return storageTheme;
+  });
+
+  // 2. Dicionário de ícones baseado no tema atual
+  const nextThemeIcon = {
+    dark: <SunIcon />,
+    light: <MoonIcon />,
+  };
+
+  // 3. Função pura de atualização de estado
+  function handleThemeChange(
+    event: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
+  ) {
+    event.preventDefault();
+
+    setTheme(prevTheme => {
+      const nextTheme = prevTheme === 'dark' ? 'light' : 'dark';
+      return nextTheme;
+    });
+  }
+
+  // 4. Efeito Colateral: Aplica no HTML e salva no Storage
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  return (
+    <nav className={styles.menu}>
+      <a
+        className={styles.menuLink}
+        href='#'
+        aria-label='Ir para a Home'
+        title='Ir para a Home'
+      >
+        <HouseIcon />
+      </a>
+
+      <a
+        className={styles.menuLink}
+        href='#'
+        aria-label='Ver Histórico'
+        title='Ver Histórico'
+      >
+        <HistoryIcon />
+      </a>
+
+      <a
+        className={styles.menuLink}
+        href='#'
+        aria-label='Configurações'
+        title='Configurações'
+      >
+        <SettingsIcon />
+      </a>
+
+      <a
+        className={styles.menuLink}
+        href='#'
+        aria-label='Mudar Tema'
+        title='Mudar Tema'
+        onClick={handleThemeChange}
+      >
+        {nextThemeIcon[theme]}
+      </a>
+    </nav>
+  );
+}
+```
