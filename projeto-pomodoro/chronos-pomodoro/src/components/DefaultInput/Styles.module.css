@@ -1,0 +1,31 @@
+.input {
+  background-color: transparent;
+  text-align: center;
+  font-size: 1.8rem;
+  padding: 0.8rem;
+  color: var(--text-default);
+  outline: none; /* Remove a borda padrão feia do navegador */
+
+  /* O truque para evitar o "pulo" no layout */
+  border: 0.2rem solid transparent;
+  border-bottom: 0.2rem solid var(--primary);
+
+  /* Transição suave de 0.1s para quando o estado (foco, cor) mudar */
+  transition: all 0.1s ease-in-out;
+}
+.input:focus {
+  border-radius: 0.8rem;
+  /* A borda deixa de ser transparente e ganha a cor primária */
+  border: 0.2rem solid var(--primary);
+}
+.input::placeholder {
+  color: var(--gray-500);
+  font-size: 1.4rem;
+  font-style: italic;
+}
+.input:disabled {
+  /* Pintamos a linha de baixo com a cor de desativado do nosso tema */
+  border-bottom: 0.2rem solid var(--disabled);
+  /* A cor do texto digitado fica mais apagada */
+  color: var(--text-muted);
+}

@@ -1,0 +1,31 @@
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.4rem;
+  padding-top: 3.2rem;
+}
+
+.logoLink {
+  display: flex;
+  flex-direction: column; /* Coloca o ícone em cima e o texto embaixo */
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  gap: 0.4rem;
+  font-size: 4.2rem;
+  text-decoration: none; /* Remove a linha padrão de links */
+  color: var(--primary);
+  transition: all 0.1s ease-in-out; /* Transição suave */
+}
+
+/* Efeito ao passar o mouse: escurece a cor primária em 50% */
+.logoLink:hover {
+  filter: brightness(50%);
+}
+
+/* Alterando o tamanho do ícone SVG direto pelo CSS */
+.logoLink svg {
+  width: 6.4rem;
+  height: 6.4rem;
+}
