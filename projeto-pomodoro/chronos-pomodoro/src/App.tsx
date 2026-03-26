@@ -2,51 +2,70 @@ import { Container } from './components/Container';
 import { Logo } from './components/Logo';
 import { Menu } from './components/Menu';
 import { CountDown } from './components/CountDown';
+import { DefaultInput} from './components/DefaultInput'
+import { Cycles } from './components/Cycles';
+import { DefaultButton } from './components/DefaultButton';
+
+import { Footer } from './components/Footer';
 
 import './styles/theme.css';
 import './styles/global.css';
+import { toast, ToastContainer } from 'react-toastify';
+import { FaCheckCircle } from 'react-icons/fa';
+
+const notifysucesso = () => toast.success("sucesso!")
 
 export function App() {
-  return (
-    <>
-      <Container>
-        <Logo />
-      </Container>
+    return (
+        <>
+            <Container>
+                <Logo />
+            </Container>
+            <Container>
+                <Menu />
+            </Container>
+            <Container>
+                <CountDown />
+            </Container>
 
-      <Container>
-        <Menu />
-      </Container>
+            <Container>
+                <form className='form' action=''>
+                    <div className='formRow'>
+                        <DefaultInput
+                            labelText='task'
+                            id='meuInput'
+                            type='text'
+                            placeholder='Digite algo'
+                        />
+                    </div>
 
-      <Container>
-        <CountDown />
-      </Container>
+                    <div className='formRow'>
+                        <p>Iniciativo pomodoro tem como aumentar a produtividade de maneira simples.</p>
+                    </div>
 
-      {/* Nossa nova estrutura de formulário */}
-      <Container>
-        <form className='form' action=''>
-          {/* Grupo 1: Label e Input */}
-          <div className='formRow'>
-            <label htmlFor='meuInput'>task</label>
-            <input id='meuInput' type='text' />
-          </div>
+                    <div className='formRow'>
+                        <Cycles />
+                    </div>
+                    botões
+                    <div className='formRow'>
+                        <DefaultButton
+                            icon={<FaCheckCircle />
+                            }
+                            onClick={notifysucesso}
+                            color='green'
+                        />
 
-          {/* Grupo 2: Texto de apoio */}
-          <div className='formRow'>
-            <p>Lorem ipsum dolor sit amet.</p>
-          </div>
+                    </div>
+                </form>
+            </Container>
 
-          {/* Grupo 3: Ciclos */}
-          <div className='formRow'>
-            <p>Ciclos</p>
-            <p>0 0 0 0 0 0 0</p>
-          </div>
+            <Container>
+                <Footer />
+            </Container>
 
-          {/* Grupo 4: Botão */}
-          <div className='formRow'>
-            <button>Enviar</button>
-          </div>
-        </form>
-      </Container>
-    </>
-  );
+            <ToastContainer
+                toastClassName="toast"
+            />
+        </>
+    );
 }
