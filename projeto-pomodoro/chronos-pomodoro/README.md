@@ -1,149 +1,149 @@
-# ⏪ Desfazendo o Prop Drilling: A Regra de Ouro
+# ☁️ Criando a Context API e o Provider
 
-Nas aulas anteriores, construímos intencionalmente um cenário de **Prop
-Drilling** (passagem excessiva de propriedades). Você deve ter percebido a dor
-de cabeça: se um componente no Nível 4 precisa de um estado, todos os
-componentes nos Níveis 2 e 3 precisam recebê-lo e repassá-lo.
+Nesta aula, vamos construir a base do nosso Estado Global usando a **Context
+API**. Em vez de usar o Contexto "cru" diretamente nos componentes, vamos seguir
+as melhores práticas do mercado: criaremos um componente _Provider_ dedicado e
+um _Custom Hook_ (Hook customizado) para facilitar o acesso aos dados.
 
-Nesta aula, vamos formalizar uma regra de ouro para saber quando usar Estado
-Local vs. Contexto Global e, em seguida, desfazer toda a complexidade que
-criamos para preparar o terreno para a Context API.
-
----
-
-## 🚩 A Flag de Alerta: Quando usar Contexto?
-
-Aqui vai a dica prática para o seu dia a dia com React:
-
-- **Pai ➡️ Filho (1 Nível):** Use `useState` + Props. É a forma mais simples e
-  performática.
-- **Pai ➡️ Filho ➡️ Neto (2 Níveis ou mais):** Acenda o sinal de alerta!
-- **A "Regra do Intermediário Inútil":** Se você tem um componente no meio do
-  caminho (como a nossa `Home`) que recebe uma _prop_ **apenas** para passá-la
-  para frente, sem usá-la em momento algum, é hora de usar a Context API.
-
-A Context API permite que você crie um "estado nuvem". Em vez de passar o estado
-de mão em mão, qualquer componente que precise da informação pode simplesmente
-"olhar para a nuvem" e pegar o que precisa, pulando todos os intermediários.
+Vamos fazer tudo em um arquivo só por enquanto para fins didáticos, mas não se
+assuste com o erro de _Fast Refresh_ no console — nós separaremos os arquivos no
+futuro!
 
 ---
 
-## 🧹 Limpando a Casa
+## 🏗️ 1. O Arquivo do Contexto (`TaskContext.tsx`)
 
-Vamos reverter as alterações dos componentes para deixá-los "limpos" novamente.
-Vamos manter o `initialState` lá no `App.tsx` porque vamos aproveitá-lo em
-breve, mas removeremos toda a passagem de props.
+Crie uma pasta `contexts` dentro de `src` e crie o arquivo `TaskContext.tsx`.
+Este arquivo fará três coisas:
 
-### 1. Limpando o `App.tsx`
+1. Definir o tipo (formato) do nosso contexto.
+2. Criar o Contexto em si.
+3. Criar o componente `TaskContextProvider` (que será o "Pai de Todos").
+4. Criar o Hook `useTaskContext` (que será usado pelos Filhos para acessar os
+   dados).
 
-Remova o envio das props para a `<Home />`.
+**Arquivo:** `src/contexts/TaskContext.tsx`
+
+```tsx
+import { createContext, useContext } from 'react';
+import type { TaskStateModel } from '../models/TaskStateModel';
+
+// 1. Tipagem do Contexto: Ele terá o `state` e a função `setState`
+export type TaskContextProps = {
+  state: TaskStateModel;
+  setState: React.Dispatch<React.SetStateAction<TaskStateModel>>;
+};
+
+// 2. Criando o Valor Inicial "Fake"
+// (Isso é usado apenas se tentarmos acessar o contexto FORA do Provider, o que não faremos)
+const initialContextValue: TaskContextProps = {
+  state: {
+    tasks: [],
+    secondsRemaining: 0,
+    formattedSecondsRemaining: '00:00',
+    activeTask: null,
+    currentCycle: 0,
+    config: { workTime: 25, shortBreakTime: 5, longBreakTime: 15 },
+  },
+  setState: () => {}, // Função vazia de placeholder
+};
+
+// 3. Criando o Contexto em si
+export const TaskContext = createContext<TaskContextProps>(initialContextValue);
+
+// ==========================================
+
+// 4. Criando o Componente Provider (O "Pai de Todos")
+type TaskContextProviderProps = {
+  children: React.ReactNode;
+};
+
+export function TaskContextProvider({ children }: TaskContextProviderProps) {
+  // Por enquanto, vamos passar o valor falso (initialContextValue)
+  // Na próxima aula, traremos o `useState` REAL para cá!
+  return (
+    <TaskContext.Provider value={initialContextValue}>
+      {children}
+    </TaskContext.Provider>
+  );
+}
+
+// ==========================================
+
+// 5. Criando o Custom Hook (Para os "Filhos" usarem)
+export function useTaskContext() {
+  return useContext(TaskContext);
+}
+```
+
+## 🌍 2. Envolvendo a Aplicação com o Provider (`App.tsx`)
+
+Agora, vamos voltar ao `App.tsx`. Precisamos dizer que tudo o que está dentro do
+`App` tem acesso à nossa nuvem de dados. Para isso, "abraçamos" a `<Home />` com
+o nosso novo `TaskContextProvider`.
 
 **Arquivo:** `src/App.tsx`
 
 ```tsx
 import { Home } from './pages/Home';
-
-import './styles/theme.css';
-import './styles/global.css';
 import { useState } from 'react';
 import type { TaskStateModel } from './models/TaskStateModel';
 
+// Importamos o nosso novo Provider
+import { TaskContextProvider } from './contexts/TaskContext';
+
+import './styles/theme.css';
+import './styles/global.css';
+
 const initialState: TaskStateModel = {
-  tasks: [],
-  secondsRemaining: 0,
-  formattedSecondsRemaining: '00:00',
-  activeTask: null,
-  currentCycle: 0,
-  config: {
-    workTime: 25,
-    shortBreakTime: 5,
-    longBreakTime: 15,
-  },
+  // ... (mantenha o initialState aqui por enquanto)
 };
 
 export function App() {
   const [state, setState] = useState(initialState);
 
-  // Removidas as props state e setState
-  return <Home />;
-}
-```
-
-**2. Limpando a** `Home` Remova a tipagem `HomeProps` e a recepção das
-variáveis.
-
-**Arquivo:** `src/pages/Home/index.tsx`
-
-```tsx
-import { Container } from '../../components/Container';
-import { CountDown } from '../../components/CountDown';
-import { MainForm } from '../../components/MainForm';
-import { MainTemplate } from '../../templates/MainTemplate';
-
-export function Home() {
+  // Abraçamos a Home com o Provider!
   return (
-    <MainTemplate>
-      <Container>
-        <CountDown />
-      </Container>
-
-      <Container>
-        <MainForm />
-      </Container>
-    </MainTemplate>
+    <TaskContextProvider>
+      <Home />
+    </TaskContextProvider>
   );
 }
 ```
 
-**3. Limpando o** `CountDown` Volte para o texto estático "00:00".
+## 📥 3. Consumindo a Nuvem no Componente Filho (`CountDown.tsx`)
+
+Chegou a hora mágica. Vamos até um componente que está lá no fundo da árvore
+(Nível 3) e vamos acessar os dados do contexto **diretamente**, sem precisar
+pedir para a `Home`!
+
+Usaremos o nosso Custom Hook `useTaskContext`.
 
 **Arquivo:** `src/components/CountDown/index.tsx`
 
-**4. Limpando o** `MainForm` Remova o botão de teste, a função de alterar estado
-e as referências ao estado no HTML (volte o texto para "25min").
-
-**Arquivo:** `src/components/MainForm/index.tsx`
-
 ```tsx
-import { PlayCircleIcon } from 'lucide-react';
-import { Cycles } from '../Cycles';
-import { DefaultButton } from '../DefaultButton';
-import { DefaultInput } from '../DefaultInput';
+import styles from './styles.module.css';
 
-export function MainForm() {
-  return (
-    <form className='form' action=''>
-      <div className='formRow'>
-        <DefaultInput
-          labelText='task'
-          id='meuInput'
-          type='text'
-          placeholder='Digite algo'
-        />
-      </div>
+// Importamos APENAS o nosso Hook customizado!
+import { useTaskContext } from '../../contexts/TaskContext';
 
-      <div className='formRow'>
-        <p>Próximo intervalo é de 25min</p>
-      </div>
+export function CountDown() {
+  // Pegamos a "nuvem" inteira
+  const taskContext = useTaskContext();
 
-      <div className='formRow'>
-        <Cycles />
-      </div>
+  // Vamos dar um console.log para provar que a mágica aconteceu
+  console.log(taskContext);
 
-      <div className='formRow'>
-        <DefaultButton icon={<PlayCircleIcon />} />
-      </div>
-    </form>
-  );
+  return <div className={styles.container}>00:00</div>;
 }
 ```
 
-## 🔜 Próximos Passos
+## 🎯 O que provamos hoje?
 
-Agora que a aplicação está limpa novamente e sem erros, temos o cenário
-perfeito. Todo o nosso planejamento e tipagem do `TaskStateModel` já estão
-prontos.
+Abra o console do seu navegador. Você verá que o `CountDown` conseguiu imprimir
+o objeto completo (`state` e `setState`)! Ele buscou essa informação diretamente
+do `TaskContextProvider` que está lá no `App.tsx`, passando reto pela `Home`.
 
-Na próxima aula, vamos, finalmente, introduzir a **Context API** e aprender como
-criar um estado global que pode ser acessado de qualquer lugar do nosso app, sem
-precisar ficar passando de pai para filho!
+**O Problema Atual:** Se você reparar, o valor que está chegando no `CountDown`
+é o nosso valor falso (`initialContextValue` que definimos no passo 2), e não o
+estado real que está vivendo no `App.tsx`.
