@@ -12,7 +12,7 @@ export function DefaultButton({
 }: DefaultButtonProps) {
   return (
     <>
-      {/* A Mágica do CSS Modules Dinâmico:
+      {/* A Mágica do CSS Modules Dinâico:
         Usamos colchetes styles[color] para acessar a classe CSS de forma dinâmica.
         Se color for 'red', o React lê: styles['red'] e aplica a classe .red do CSS!
       */}
