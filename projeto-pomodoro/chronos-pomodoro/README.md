@@ -1,146 +1,182 @@
-# 🛠️ Refatorando o Contexto: Provider e Custom Hook
+# 🗂️ Organizando a Casa: Separando o Contexto em Arquivos
 
-Chegou o momento de organizarmos nossa casa e criarmos as estruturas definitivas
-para o nosso Contexto: o Provider Customizado e o Custom Hook!
+Colocar tudo em um arquivo só foi ótimo para entendermos como as engrenagens da
+Context API se conectam. Mas, na vida real (e para o Vite parar de reclamar no
+console), precisamos separar as responsabilidades.
 
-Nesta aula, vamos melhorar a forma como usamos a Context API. Usar o
-`<TaskContext.Provider>` diretamente no `App.tsx` e o `useContext(TaskContext)`
-espalhado pelos componentes funciona, mas deixa o código poluído e difícil de
-dar manutenção.
-
-A melhor prática no React é isolar essas responsabilidades. Vamos criar um
-componente específico para ser o "Pai" (Provider) e um atalho (Hook) para os
-"Filhos" consumirem os dados.
+Vamos "fatiar" aquele nosso arquivo gigante do contexto em quatro arquivos
+menores e mais focados.
 
 ---
 
-## 📦 1. O Componente Provider e o Custom Hook
+## ✂️ 1. O Estado Inicial (`InitialTaskState.ts`)
 
-Vamos centralizar tudo relacionado ao contexto em um único arquivo.
+Vamos isolar o objeto que define como o nosso estado começa. Como este arquivo
+não tem JSX (não renderiza HTML), a extensão é apenas `.ts`.
 
-> ⚠️ **Aviso sobre o Erro no Console (Fast Refresh):** > Ao colocar o Contexto,
-> o Provider e o Hook no mesmo arquivo, o Vite (ferramenta que roda nosso React)
-> pode reclamar no console dizendo: _"Fast refresh only works when a file only
-> exports components"_. **Não se preocupe com isso agora!** Mais para frente,
-> vamos separar isso em arquivos diferentes e o erro vai sumir.
+**Arquivo:** `src/contexts/InitialTaskState.ts` _(ou na pasta models/onde
+preferir, seguindo a aula)_
 
-**Arquivo:** `src/contexts/TaskContext.tsx`
+```typescript
+import type { TaskStateModel } from '../models/TaskStateModel';
 
-```tsx
-import { createContext, useContext } from 'react';
-import type { TaskStateModel } from '../../models/TaskStateModel';
-
-// 1. Trazemos o initialState para cá
-const initialState: TaskStateModel = {
+export const initialTaskState: TaskStateModel = {
   tasks: [],
   secondsRemaining: 0,
   formattedSecondsRemaining: '00:00',
   activeTask: null,
   currentCycle: 0,
-  config: { workTime: 25, shortBreakTime: 5, longBreakTime: 15 },
+  config: {
+    workTime: 25,
+    shortBreakTime: 5,
+    longBreakTime: 15,
+  },
 };
+```
 
-type TaskContextProps = {
+## 🧠 2. A Criação do Contexto (`TaskContext.ts`)
+
+Aqui vai ficar apenas a tipagem e a criação do contexto em si. Novamente, sem
+JSX, então usamos a extensão `.ts`.
+
+**Arquivo:** `src/contexts/TaskContext.ts`
+
+```tsx
+import { createContext } from 'react';
+import type { TaskStateModel } from '../models/TaskStateModel';
+import { initialTaskState } from './InitialTaskState';
+
+export type TaskContextProps = {
   state: TaskStateModel;
   setState: React.Dispatch<React.SetStateAction<TaskStateModel>>;
 };
 
 const initialContextValue = {
-  state: initialState,
-  setState: () => {}, // Função vazia provisória
+  state: initialTaskState,
+  setState: () => {},
 };
 
-// 2. Criação do Contexto
 export const TaskContext = createContext<TaskContextProps>(initialContextValue);
+```
 
-// ==============================================================
-// 3. NOSSO COMPONENTE PROVIDER CUSTOMIZADO
-// ==============================================================
+## 🛡️ 3. O Componente Provider (`TaskContextProvider.tsx`)
+
+Este é o componente que vai "abraçar" a aplicação e fornecer o useState de
+verdade. Como ele retorna JSX (o `<TaskContext.Provider>`), a extensão precisa
+ser `.tsx`.
+
+**Arquivo:** `src/contexts/TaskContextProvider.tsx`
+
+```tsx
+import { useState } from 'react';
+import { TaskContext } from './TaskContext';
+import { initialTaskState } from './InitialTaskState';
+
 type TaskContextProviderProps = {
   children: React.ReactNode;
 };
 
 export function TaskContextProvider({ children }: TaskContextProviderProps) {
-  // O valor passado aqui na prop "value" é o que de fato vai para a aplicação!
+  const [state, setState] = useState(initialTaskState);
+
   return (
-    <TaskContext.Provider value={{ ...initialContextValue }}>
+    <TaskContext.Provider value={{ state, setState }}>
       {children}
     </TaskContext.Provider>
   );
 }
+```
 
-// ==============================================================
-// 4. NOSSO CUSTOM HOOK (Atalho para os filhos)
-// ==============================================================
+## 🪝 4. O Custom Hook (`useTaskContext.ts`)
+
+Por fim, o atalho para os componentes filhos consumirem o contexto.
+
+**Arquivo:** `src/contexts/useTaskContext.ts`
+
+```tsx
+import { useContext } from 'react';
+import { TaskContext } from './TaskContext';
+
 export function useTaskContext() {
   return useContext(TaskContext);
 }
 ```
 
-## 🧹 2. Limpando o `App.tsx`
+## 🧹 5. Limpando a Bagunça do Formulário (`MainForm.tsx`)
 
-Agora que temos o `TaskContextProvider`, nosso `App.tsx` fica muito mais
-elegante. Ele não precisa mais saber sobre o `TaskContext.Provider` cru, ele
-apenas usa o componente que acabamos de criar.
+Aquele botão de teste ("Alterar para 21:00") cumpriu seu papel, mas agora é hora
+de voltar ao mundo real. Vamos apagá-lo e preparar a função real que vai lidar
+com o envio do formulário (`onSubmit`).
 
-Arquivo: `src/App.tsx`
+**Arquivo:** `src/components/MainForm/index.tsx`
 
 ```tsx
-import { Home } from './pages/Home';
-import { useState } from 'react';
-import type { TaskStateModel } from './models/TaskStateModel';
-import { TaskContextProvider } from './contexts/TaskContext';
+import { PlayCircleIcon } from 'lucide-react';
+import { Cycles } from '../Cycles';
+import { DefaultButton } from '../DefaultButton';
+import { DefaultInput } from '../DefaultInput';
+import { useTaskContext } from '../../contexts/useTaskContext'; // <-- Atualize a importação!
 
-import './styles/theme.css';
-import './styles/global.css';
+export function MainForm() {
+  // Já deixamos o Hook preparado aqui, usaremos em breve
+  const { setState } = useTaskContext();
 
-const initialState: TaskStateModel = {
-  // ... (mesmo objeto de antes)
-};
-
-export function App() {
-  // O estado REAL ainda está aqui, mas o Provider não está usando ele (ainda!)
-  const [state, setState] = useState(initialState);
+  // Função que vai interceptar o recarregamento da página ao enviar o form
+  function handleCreateNewTask(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    console.log('DEU CERTO');
+  }
 
   return (
-    // Usamos o nosso componente limpo e encapsulado
-    <TaskContextProvider>
-      <Home />
-    </TaskContextProvider>
+    <form onSubmit={handleCreateNewTask} className='form' action=''>
+      <div className='formRow'>
+        <DefaultInput
+          labelText='task'
+          id='meuInput'
+          type='text'
+          placeholder='Digite algo'
+        />
+      </div>
+
+      <div className='formRow'>
+        <p>Próximo intervalo é de 25min</p>
+      </div>
+
+      <div className='formRow'>
+        <Cycles />
+      </div>
+
+      <div className='formRow'>
+        <DefaultButton icon={<PlayCircleIcon />} />
+      </div>
+    </form>
   );
 }
 ```
 
-## 🚀 3. Consumindo o Hook no CountDown
+## 🔌 6. Corrigindo as Importações no `App` e no `CountDown`
 
-Lembra que antes precisávamos importar o `useContext` do React E o
-`TaskContext`? Graças ao nosso Custom Hook, basta uma única importação para
-termos acesso à nossa "nuvem" de dados.
+Como mudamos os arquivos de lugar, não se esqueça de atualizar as importações (o
+VS Code geralmente ajuda com isso se você apagar o caminho e digitar de novo).
 
-**Arquivo:** `src/components/CountDown/index.tsx`
+**No** `src/App.tsx:`
 
 ```tsx
-import styles from './styles.module.css';
-
-// 1. Importamos apenas o nosso Hook!
-import { useTaskContext } from '../../contexts/TaskContext';
-
-export function CountDown() {
-  // 2. Chamamos o Hook
-  const taskContext = useTaskContext();
-
-  console.log(taskContext); // Teste no navegador!
-
-  return <div className={styles.container}>00:00</div>;
-}
+// Atualize para puxar do arquivo específico do Provider
+import { TaskContextProvider } from './contexts/TaskContextProvider';
 ```
 
-## 🧩 O Que Falta?
+**No** `src/components/CountDown/index.tsx:`
 
-Fizemos uma refatoração arquitetural excelente, mas temos um pequeno detalhe
-técnico: nosso estado ainda não é reativo.
+```tsx
+// Atualize para puxar do arquivo específico do Hook
+import { useTaskContext } from '../../contexts/useTaskContext';
+```
 
-Se você olhar com atenção, o `TaskContextProvider` está passando o
-`initialContextValue` (que é estático e tem uma função `setState` vazia) para a
-aplicação. Enquanto isso, o useState de verdade ficou lá "esquecido" no
-`App.tsx`.
+## 🎯 Conclusão
+
+Pronto! Seu terminal deve estar livre de erros, o _Fast Refresh_ voltou a
+funcionar perfeitamente e a nossa base arquitetural está impecável.
+
+A partir de agora, não teremos mais dados falsos de teste: vamos começar a
+construir a lógica real da nossa aplicação Pomodoro!
