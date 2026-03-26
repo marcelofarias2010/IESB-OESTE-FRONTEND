@@ -1,23 +1,76 @@
-# 🕳️ Prop Drilling na Prática: Descendo o Estado
+# ⏪ Desfazendo o Prop Drilling: A Regra de Ouro
 
-Na aula passada, o estado nasceu no `App.tsx` e foi repassado para a página
-`Home`. Agora, precisamos que esse estado chegue aos componentes que realmente
-vão usá-lo: o `CountDown` e o `MainForm`.
+Nas aulas anteriores, construímos intencionalmente um cenário de **Prop
+Drilling** (passagem excessiva de propriedades). Você deve ter percebido a dor
+de cabeça: se um componente no Nível 4 precisa de um estado, todos os
+componentes nos Níveis 2 e 3 precisam recebê-lo e repassá-lo.
 
-Vamos fazer isso acontecer e observar os problemas que surgem com essa
-abordagem.
+Nesta aula, vamos formalizar uma regra de ouro para saber quando usar Estado
+Local vs. Contexto Global e, em seguida, desfazer toda a complexidade que
+criamos para preparar o terreno para a Context API.
 
 ---
 
-## 🚚 1. Repassando as Props na `Home`
+## 🚩 A Flag de Alerta: Quando usar Contexto?
 
-Primeiro, vamos exportar o tipo `HomeProps` para podermos reutilizá-lo nos
-componentes filhos (isso poupa a gente de ter que recriar a mesma tipagem
-complexa em todo arquivo).
+Aqui vai a dica prática para o seu dia a dia com React:
 
-Depois, usamos o _spread operator_ (`{...props}`) para repassar **todas** as
-propriedades que a `Home` recebeu diretamente para o `CountDown` e para o
-`MainForm`.
+- **Pai ➡️ Filho (1 Nível):** Use `useState` + Props. É a forma mais simples e
+  performática.
+- **Pai ➡️ Filho ➡️ Neto (2 Níveis ou mais):** Acenda o sinal de alerta!
+- **A "Regra do Intermediário Inútil":** Se você tem um componente no meio do
+  caminho (como a nossa `Home`) que recebe uma _prop_ **apenas** para passá-la
+  para frente, sem usá-la em momento algum, é hora de usar a Context API.
+
+A Context API permite que você crie um "estado nuvem". Em vez de passar o estado
+de mão em mão, qualquer componente que precise da informação pode simplesmente
+"olhar para a nuvem" e pegar o que precisa, pulando todos os intermediários.
+
+---
+
+## 🧹 Limpando a Casa
+
+Vamos reverter as alterações dos componentes para deixá-los "limpos" novamente.
+Vamos manter o `initialState` lá no `App.tsx` porque vamos aproveitá-lo em
+breve, mas removeremos toda a passagem de props.
+
+### 1. Limpando o `App.tsx`
+
+Remova o envio das props para a `<Home />`.
+
+**Arquivo:** `src/App.tsx`
+
+```tsx
+import { Home } from './pages/Home';
+
+import './styles/theme.css';
+import './styles/global.css';
+import { useState } from 'react';
+import type { TaskStateModel } from './models/TaskStateModel';
+
+const initialState: TaskStateModel = {
+  tasks: [],
+  secondsRemaining: 0,
+  formattedSecondsRemaining: '00:00',
+  activeTask: null,
+  currentCycle: 0,
+  config: {
+    workTime: 25,
+    shortBreakTime: 5,
+    longBreakTime: 15,
+  },
+};
+
+export function App() {
+  const [state, setState] = useState(initialState);
+
+  // Removidas as props state e setState
+  return <Home />;
+}
+```
+
+**2. Limpando a** `Home` Remova a tipagem `HomeProps` e a recepção das
+variáveis.
 
 **Arquivo:** `src/pages/Home/index.tsx`
 
@@ -25,60 +78,29 @@ propriedades que a `Home` recebeu diretamente para o `CountDown` e para o
 import { Container } from '../../components/Container';
 import { CountDown } from '../../components/CountDown';
 import { MainForm } from '../../components/MainForm';
-import type { TaskStateModel } from '../../models/TaskStateModel';
 import { MainTemplate } from '../../templates/MainTemplate';
 
-// 1. Exportamos o tipo para reutilizar depois
-export type HomeProps = {
-  state: TaskStateModel;
-  setState: React.Dispatch<React.SetStateAction<TaskStateModel>>;
-};
-
-export function Home(props: HomeProps) {
-  // A Home não usa o state, ela só serve de "ponte"
+export function Home() {
   return (
     <MainTemplate>
       <Container>
-        {/* 2. Repassamos tudo que a Home recebeu para o CountDown */}
-        <CountDown {...props} />
+        <CountDown />
       </Container>
 
       <Container>
-        {/* ...e para o MainForm! */}
-        <MainForm {...props} />
+        <MainForm />
       </Container>
     </MainTemplate>
   );
 }
 ```
 
-## ⏱️ 2. Recebendo o Estado no `CountDown`
-
-Agora o nosso cronômetro finalmennte tem acesso ao tempo formatado que vem lá do
-`App.tsx`!
+**3. Limpando o** `CountDown` Volte para o texto estático "00:00".
 
 **Arquivo:** `src/components/CountDown/index.tsx`
 
-```tsx
-import type { HomeProps } from '../../pages/Home';
-import styles from './styles.module.css';
-
-// Usamos a tipagem exportada da Home
-export function CountDown({ state }: HomeProps) {
-  return (
-    {/* Exibe o tempo que está no estado global */}
-    <div className={styles.container}>{state.formattedSecondsRemaining}</div>
-  );
-}
-```
-
-## 📝 3. Recebendo e Alterando o Estado no `MainForm`
-
-Para testarmos se tudo está conectado, vamos exibir uma informação do estado (o
-tempo de trabalho) e criar um botão de teste que altera o estado global.
-
-⚠️ **Atenção**: Se atente à forma como o estado de `config` (que é um objeto
-dentro de outro objeto) é atualizado!
+**4. Limpando o** `MainForm` Remova o botão de teste, a função de alterar estado
+e as referências ao estado no HTML (volte o texto para "25min").
 
 **Arquivo:** `src/components/MainForm/index.tsx`
 
@@ -87,32 +109,10 @@ import { PlayCircleIcon } from 'lucide-react';
 import { Cycles } from '../Cycles';
 import { DefaultButton } from '../DefaultButton';
 import { DefaultInput } from '../DefaultInput';
-import type { HomeProps } from '../../pages/Home';
 
-export function MainForm({ state, setState }: HomeProps) {
-  // Função de teste para alterar o estado global
-  function handleClick() {
-    setState(prevState => {
-      return {
-        ...prevState, // Copia o estado principal
-        config: {
-          ...prevState.config, // Copia o objeto 'config'
-          workTime: 34, // Altera apenas o workTime
-        },
-        formattedSecondsRemaining: '23:34', // Atualiza o cronômetro
-      };
-    });
-  }
-
+export function MainForm() {
   return (
     <form className='form' action=''>
-      <div>
-        {/* Botão de teste! type="button" evita que ele recarregue a página */}
-        <button type='button' onClick={handleClick}>
-          Testar Alteração de Estado
-        </button>
-      </div>
-
       <div className='formRow'>
         <DefaultInput
           labelText='task'
@@ -123,8 +123,7 @@ export function MainForm({ state, setState }: HomeProps) {
       </div>
 
       <div className='formRow'>
-        {/* Consumindo o estado global */}
-        <p>Próximo intervalo é de {state.config.workTime}min</p>
+        <p>Próximo intervalo é de 25min</p>
       </div>
 
       <div className='formRow'>
@@ -139,22 +138,12 @@ export function MainForm({ state, setState }: HomeProps) {
 }
 ```
 
-## 🚨 O Diagnóstico: Por que isso é ruim?
+## 🔜 Próximos Passos
 
-Faça o teste: clique no botão "Testar Alteração de Estado" e veja que tanto o
-texto do formulário quanto o número do `CountDown` mudam simultaneamente. A
-engrenagem funciona!
+Agora que a aplicação está limpa novamente e sem erros, temos o cenário
+perfeito. Todo o nosso planejamento e tipagem do `TaskStateModel` já estão
+prontos.
 
-Mas pare e observe a arquitetura que criamos:
-
-1. O estado nasce no **App** (Nível 1).
-2. O App passa para a **Home** (Nível 2).
-3. A Home passa para o **MainForm** e **CountDown** (Nível 3).
-4. Em breve, o MainForm precisará passar esse estado para o `<Cycles />` e para
-   o `<DefaultButton />` (Nível 4).
-
-**A Regra do "Homem do Meio":** Se você tem um componente na sua árvore (como a
-nossa `<Home />`) que recebe uma propriedade apenas para passá-la para o filho,
-sem utilizá-la para mais nada, você está sofrendo de _Prop Drilling_. Em
-aplicações reais, com 10 ou 20 níveis de profundidade, isso vira um pesadelo de
-manutenção.
+Na próxima aula, vamos, finalmente, introduzir a **Context API** e aprender como
+criar um estado global que pode ser acessado de qualquer lugar do nosso app, sem
+precisar ficar passando de pai para filho!
