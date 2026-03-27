@@ -4,6 +4,17 @@
     box-sizing: border-box;
 }
 
+:root {
+  --gray-900: #121214;
+  --gray-800: #202024;
+  --gray-300: #c4c4cc;
+
+  --text-default: #e1e1e6;
+  --text-muted: #8d8d99;
+
+  --primary: #8257e6;
+}
+
 html {
     font-size: 62.5%;
 }
@@ -21,39 +32,86 @@ body {
         'Open Sans',
         'Helvetica Neue',
         sans-serif;
+
     font-size: 1.6rem;
-    /* 16px */
     background: var(--gray-900);
     color: var(--text-default);
+
+    -webkit-font-smoothing: antialiased;
 }
 
 .container-fluid {
-    max-width: auto;
-}
-
-/* src/components/Container.module.css */
-
-.container {
-    max-width: 98rem;
+    width: 100%;
     margin: 0 auto;
 }
 
+/* Container principal */
+.container {
+    max-width: 98rem;
+    margin: 0 auto;
+    padding: 0 1.6rem;
+}
+
+/* Conteúdo interno */
 .content {
     padding: 3.2rem;
 }
+
+/* Formulário */
 .form {
   display: flex;
-  align-items: center;
-  justify-content: center;
   flex-direction: column;
   gap: 2.4rem;
+  width: 100%;
+  max-width: 40rem;
+  margin: 0 auto;
 }
 
-/* O mesmo alinhamento para o conteúdo interno de cada "linha" */
+/* Linha do formulário */
 .formRow {
   display: flex;
-  align-items: center;
-  justify-content: center;
   flex-direction: column;
-  gap: 2.4rem;
+  gap: 1.2rem;
+  width: 100%;
+}
+
+/* Inputs e botões */
+input,
+button {
+  width: 100%;
+  padding: 1.2rem;
+  border-radius: 8px;
+  border: none;
+  font-size: 1.6rem;
+}
+
+input {
+  background: var(--gray-800);
+  color: var(--text-default);
+}
+
+input::placeholder {
+  color: var(--text-muted);
+}
+
+button {
+  background: var(--primary);
+  color: white;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+button:hover {
+  filter: brightness(1.1);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  html {
+    font-size: 56.25%;
+  }
+
+  .content {
+    padding: 2rem;
+  }
 }
