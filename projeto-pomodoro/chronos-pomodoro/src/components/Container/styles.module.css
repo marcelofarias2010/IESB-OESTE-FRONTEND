@@ -1,0 +1,11 @@
+/* src/components/Container.module.css */
+
+.container {
+  max-width: 98rem;
+  margin: 0 auto;
+  background-color: red;
+}
+
+.content {
+  padding: 3.2rem;
+}
