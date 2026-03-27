@@ -1,3 +1,17 @@
+import "./styles/theme.css";
+import "./styles/globals.css";
+import { Heading } from "./components/Heading";
+import { Timer } from "lucide-react"; // Importando o ícone
+
 export function App() {
-  <h1>ola mundo</h1>;
+  return (
+    <>
+      <Heading>
+        Histórico
+        <button>
+          <Timer />
+        </button>
+      </Heading>
+    </>
+  );
 }

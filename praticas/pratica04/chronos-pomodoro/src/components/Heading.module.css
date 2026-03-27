@@ -1,0 +1,8 @@
+/* src/components/Heading.module.css */
+.heading {
+  background-color: brown;
+  color: white;
+}
+.cyanText {
+  color: cyan;
+}
