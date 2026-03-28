@@ -1,0 +1,161 @@
+/* 1. GUIA DE ESTILOS (Cores e Fontes) */
+:root {
+    --primary: #2563eb;    /* Cor Primária */
+    --secondary: #10b981;  /* Cor Secundária */
+    --neutral: #f8fafc;    /* Cor Neutra */
+    --dark: #0f172a;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #334155;
+    font-family: 'Roboto', sans-serif; /* Fonte para corpo de texto */
+    display: flex;
+    justify-content: center;
+}
+
+/* Container Fixo conforme Proporção do Figma */
+.canvas-1440 {
+    width: 1440px;
+    min-height: 1024px;
+    background-color: var(--neutral);
+    display: flex;
+    flex-direction: column;
+}
+
+/* 2. HEADER (Flex Container) */
+header {
+    height: 80px;
+    background-color: #fff;
+    padding: 0 80px;
+    display: flex; /* Requisito */
+    justify-content: space-between; /* Logo esquerda, Carrinho direita */
+    align-items: center; /* Centralização vertical */
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.logo {
+    font-family: 'Inter', sans-serif; /* Fonte para títulos */
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.cart-container {
+    position: relative;
+    font-size: 24px;
+}
+
+.cart-badge {
+    position: absolute;
+    top: -5px;
+    right: -10px;
+    background-color: var(--secondary);
+    color: white;
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 50%;
+}
+
+/* 3. HERO SECTION (Flexbox Centralização) */
+.hero {
+    height: 300px;
+    background: linear-gradient(rgba(30, 41, 59, 0.8), rgba(30, 41, 59, 0.8)), 
+                url('https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1440');
+    background-size: cover;
+    background-position: center;
+    display: flex; /* Requisito */
+    justify-content: center; /* Centraliza horizontalmente */
+    align-items: center; /* Centraliza verticalmente */
+    color: white;
+}
+
+.hero h1 {
+    font-family: 'Inter', sans-serif;
+    font-size: 42px;
+}
+
+/* 4. GRID DE PRODUTOS (Flex Container) */
+.product-grid {
+    padding: 60px 80px;
+    display: flex; /* Requisito */
+    flex-wrap: wrap; /* Requisito: quebra automática */
+    gap: 30px; /* Requisito: espaçamento */
+    justify-content: center;
+}
+
+/* 5. CARD DE PRODUTO (Flex Item e Flex Column) */
+.product-card {
+    background-color: #fff;
+    width: 350px;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    display: flex; /* Requisito */
+    flex-direction: column; /* Requisito: empilhamento vertical */
+    transition: transform 0.2s;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+}
+
+.product-image img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.product-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: var(--dark);
+}
+
+.price-container {
+    margin-bottom: 20px;
+}
+
+.old-price {
+    text-decoration: line-through; /* Requisito: preço riscado */
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.new-price {
+    display: block;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--dark);
+}
+
+.btn-add {
+    margin-top: auto; /* Empurra o botão para o final do card */
+    padding: 12px;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* 6. FOOTER */
+footer {
+    height: 100px;
+    background-color: var(--dark);
+    color: #94a3b8;
+    padding: 0 80px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+}
