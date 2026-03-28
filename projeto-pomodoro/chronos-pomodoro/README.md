@@ -1,37 +1,36 @@
-# 🚀 Iniciando a Lógica: Capturando o Envio do Formulário
+# ⌨️ Capturando Dados: O Padrão de Inputs Controlados
 
-Agora que a nossa arquitetura de estado (Context API) está organizada, vamos dar
-uma pausa na complexidade estrutural e começar a dar vida à aplicação. O coração
-do nosso Pomodoro é o botão de "Play" (iniciar ciclo). Ele é, na verdade, o
-botão de envio (submit) do nosso formulário de tarefas.
+Vamos explorar a forma mais clássica e poderosa de lidar com inputs no React: os
+Controlled Components (Componentes Controlados)!
 
-Nesta aula, vamos interceptar esse envio para evitar que o navegador recarregue
-a página, preparando o terreno para capturarmos os dados do input na próxima
-etapa.
-
----
-
-## 🛑 O Problema do Comportamento Padrão
-
-Se você abrir a aba **Network** (Rede) do painel de desenvolvedor do seu
-navegador, limpar os dados e clicar no botão de Play do nosso formulário, verá
-que a página inteira é recarregada.
-
-Esse é o comportamento padrão do HTML: ao dar _submit_ em um `<form>`, ele tenta
-enviar os dados para algum lugar e recarrega a tela. No React (que constrói
-aplicações de página única - _SPA_), nós **nunca** queremos que a página
-recarregue! Nós mesmos vamos gerenciar esses dados via JavaScript.
+Na aula passada, nós conseguimos interceptar o envio do formulário, mas ainda
+não sabemos o que o usuário digitou. Nesta aula, vamos aprender a técnica mais
+comum no React para ler o valor de um campo de texto: o **Input Controlado**
+(_Controlled Component_).
 
 ---
 
-## 🎯 Interceptando o Envio (`MainForm.tsx`)
+## 🎭 O que é um Input Controlado?
 
-Vamos criar uma função para lidar com o envio do formulário (`onSubmit`).
+No HTML tradicional, o próprio `<input>` guarda o que você digita nele. No
+React, nós gostamos de ter o controle de tudo. Um Input Controlado é aquele em
+que o React (através de um estado) é a "única fonte da verdade".
 
-> 💡 **Dica de TypeScript:** Se você não souber qual é o tipo do evento, você
-> pode criar uma função anônima provisória dentro do `onSubmit={(e) => {}}`,
-> passar o mouse por cima do `e` e o VS Code vai te mostrar a tipagem exata para
-> você copiar! Neste caso, é `React.FormEvent<HTMLFormElement>`.
+Para transformar um input comum em um input controlado, precisamos de duas
+coisas:
+
+1. Uma propriedade `value` atrelada a uma variável de estado.
+2. Um evento `onChange` que atualiza esse estado a cada tecla digitada.
+
+Se você colocar apenas o `value` sem o `onChange`, o React vai travar o seu
+input e você não conseguirá digitar nada nele!
+
+---
+
+## 🛠️ Implementando o Input Controlado (`MainForm.tsx`)
+
+Vamos criar um estado chamado `taskName` e conectá-lo ao nosso
+`<DefaultInput />`.
 
 **Arquivo:** `src/components/MainForm/index.tsx`
 
@@ -42,23 +41,23 @@ import { DefaultButton } from '../DefaultButton';
 import { DefaultInput } from '../DefaultInput';
 import { useTaskContext } from '../../contexts/useTaskContext';
 
+// 1. Importe o useState
+import { useState } from 'react';
+
 export function MainForm() {
   const { setState } = useTaskContext();
 
-  // 1. Criamos a função Handler para o formulário
+  // 2. Crie o estado para guardar o que o usuário digita
+  const [taskName, setTaskName] = useState('');
+
   function handleCreateNewTask(event: React.FormEvent<HTMLFormElement>) {
-    // 2. Previne o comportamento padrão (recarregar a página)
     event.preventDefault();
 
-    // 3. Log de teste para confirmar que funcionou
-    console.log('DEU CERTO');
+    // 5. Agora podemos ver o valor exato no momento do envio!
+    console.log('DEU CERTO', taskName);
   }
 
-  // Apenas removi a função handleClick do botão de teste da aula passada,
-  // pois já limpamos isso no passo anterior.
-
   return (
-    // 4. Conectamos a nossa função ao evento onSubmit do form
     <form onSubmit={handleCreateNewTask} className='form' action=''>
       <div className='formRow'>
         <DefaultInput
@@ -66,6 +65,10 @@ export function MainForm() {
           id='meuInput'
           type='text'
           placeholder='Digite algo'
+          // 3. Forçamos o input a exibir o que está no estado
+          value={taskName}
+          // 4. A cada tecla (e.target.value), atualizamos o estado
+          onChange={e => setTaskName(e.target.value)}
         />
       </div>
 
@@ -85,16 +88,31 @@ export function MainForm() {
 }
 ```
 
-## ✅ Testando o Resultado
+## 🕵️‍♂️ Como a Mágica Acontece (Passo a Passo)
 
-1. Abra o console do seu navegador.
-2. Clique no botão de Play no seu formulário.
-3. Você deve ver a mensagem "DEU CERTO" aparecer no console.
-4. **O mais importante:** A página **não** deve recarregar e a aba Network não
-   deve disparar novas requisições de recarregamento de página.
+1. O usuário aperta a tecla "A".
+2. O evento `onChange` é disparado. Ele captura a letra "A" (através de
+   `e.target.value`).
+3. A função `setTaskName('A')` é chamada.
+4. O React percebe que o estado mudou e re-renderiza o componente
+   `<MainForm />`.
+5. O componente desenha o input novamente, mas agora passando `value={'A'}`.
+6. A letra "A" aparece na tela.
 
-**Próximos Passos:** Conseguimos segurar o formulário! Agora precisamos
-descobrir o que o usuário digitou dentro do nosso campo de texto. Como o nosso
-`<DefaultInput />` é um componente customizado, capturar o valor dele exige uma
-técnica específica no React (o conceito de _forwardRef_ ou o uso de estados
-controlados).
+Tudo isso acontece em milissegundos **para cada** tecla que você digita!
+
+## ⚠️ Um Alerta (Mas não precisa surtar!)
+
+Como vimos no passo a passo acima, um input controlado faz o componente ser
+renderizado novamente a cada única tecla digitada.
+
+**Isso vai deixar meu site lento?** Na imensa maioria das vezes: **NÃO**. Para
+formulários normais (tela de login, cadastro, pomodoro, etc.), os navegadores
+modernos lidam com essas renderizações com as mãos amarradas nas costas.
+
+No entanto, se você estiver construindo um formulário absurdamente gigante (ex:
+uma planilha com 100 campos na mesma tela), essa técnica pode causar lentidão.
+
+Para esses casos raros (e também para conhecermos outras ferramentas do React),
+existe uma segunda forma de capturar dados de inputs sem causar
+re-renderizações. É a técnica dos Inputs Não-Controlados usando Refs.
