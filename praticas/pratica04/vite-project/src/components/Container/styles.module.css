@@ -1,0 +1,13 @@
+/* src/components/Container.module.css */
+
+.container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.content {
+  width: 100%;
+  max-width: 1200px;
+  padding: 2rem;
+}
