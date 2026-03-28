@@ -1,36 +1,37 @@
-# ⌨️ Capturando Dados: O Padrão de Inputs Controlados
+# ⚓ Capturando Dados sem Renderizar: A Técnica do `useRef`
 
-Vamos explorar a forma mais clássica e poderosa de lidar com inputs no React: os
-Controlled Components (Componentes Controlados)!
+Vamos explorar os Uncontrolled Components e conhecer mais um Hook poderoso do
+React: o useRef!
 
-Na aula passada, nós conseguimos interceptar o envio do formulário, mas ainda
-não sabemos o que o usuário digitou. Nesta aula, vamos aprender a técnica mais
-comum no React para ler o valor de um campo de texto: o **Input Controlado**
-(_Controlled Component_).
-
----
-
-## 🎭 O que é um Input Controlado?
-
-No HTML tradicional, o próprio `<input>` guarda o que você digita nele. No
-React, nós gostamos de ter o controle de tudo. Um Input Controlado é aquele em
-que o React (através de um estado) é a "única fonte da verdade".
-
-Para transformar um input comum em um input controlado, precisamos de duas
-coisas:
-
-1. Uma propriedade `value` atrelada a uma variável de estado.
-2. Um evento `onChange` que atualiza esse estado a cada tecla digitada.
-
-Se você colocar apenas o `value` sem o `onChange`, o React vai travar o seu
-input e você não conseguirá digitar nada nele!
+Na aula passada, vimos que os **Inputs Controlados** (com `useState`) fazem o
+componente atualizar a tela a cada tecla digitada. Embora isso geralmente não
+seja um problema de performance, existe uma outra forma de capturar dados de um
+formulário: os **Inputs Não-Controlados** usando o Hook `useRef`.
 
 ---
 
-## 🛠️ Implementando o Input Controlado (`MainForm.tsx`)
+## 🧐 O que é o `useRef`?
 
-Vamos criar um estado chamado `taskName` e conectá-lo ao nosso
-`<DefaultInput />`.
+O `useRef` é como uma "caixa forte" dentro do seu componente. Você pode guardar
+qualquer valor lá dentro (um número, um objeto, ou até mesmo um elemento HTML
+inteiro!).
+
+A grande sacada do `useRef` é dupla:
+
+1. O valor sobrevive entre as renderizações do componente.
+2. **Alterar o valor do `useRef` NÃO faz o componente ser renderizado
+   novamente.**
+
+Sempre acessamos ou alteramos o valor salvo dentro de um ref através da
+propriedade `.current`.
+
+---
+
+## 🛠️ Implementando o Input Não-Controlado (`MainForm.tsx`)
+
+Em vez de guardarmos cada letra digitada, vamos usar o `useRef` para "agarrar" o
+elemento `<input>` real do HTML. Quando o usuário clicar em "Enviar", nós
+olhamos para esse input e pegamos o que está escrito lá dentro, de uma vez só!
 
 **Arquivo:** `src/components/MainForm/index.tsx`
 
@@ -41,20 +42,20 @@ import { DefaultButton } from '../DefaultButton';
 import { DefaultInput } from '../DefaultInput';
 import { useTaskContext } from '../../contexts/useTaskContext';
 
-// 1. Importe o useState
-import { useState } from 'react';
+// 1. Trocamos o import do useState pelo useRef
+import { useRef } from 'react';
 
 export function MainForm() {
   const { setState } = useTaskContext();
 
-  // 2. Crie o estado para guardar o que o usuário digita
-  const [taskName, setTaskName] = useState('');
+  // 2. Criamos a referência e tipamos para o TypeScript saber que é um input
+  const taskNameInput = useRef<HTMLInputElement>(null);
 
   function handleCreateNewTask(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    // 5. Agora podemos ver o valor exato no momento do envio!
-    console.log('DEU CERTO', taskName);
+    // 4. No momento do envio, acessamos o elemento HTML (.current) e pegamos o valor (.value)
+    console.log('DEU CERTO', taskNameInput.current?.value);
   }
 
   return (
@@ -65,24 +66,12 @@ export function MainForm() {
           id='meuInput'
           type='text'
           placeholder='Digite algo'
-          // 3. Forçamos o input a exibir o que está no estado
-          value={taskName}
-          // 4. A cada tecla (e.target.value), atualizamos o estado
-          onChange={e => setTaskName(e.target.value)}
+          // 3. Removemos o 'value' e o 'onChange', e passamos a nossa ref para o input
+          ref={taskNameInput}
         />
       </div>
 
-      <div className='formRow'>
-        <p>Próximo intervalo é de 25min</p>
-      </div>
-
-      <div className='formRow'>
-        <Cycles />
-      </div>
-
-      <div className='formRow'>
-        <DefaultButton icon={<PlayCircleIcon />} />
-      </div>
+      {/* ... (restante do código: Cycles, DefaultButton, etc) ... */}
     </form>
   );
 }
@@ -90,29 +79,29 @@ export function MainForm() {
 
 ## 🕵️‍♂️ Como a Mágica Acontece (Passo a Passo)
 
-1. O usuário aperta a tecla "A".
-2. O evento `onChange` é disparado. Ele captura a letra "A" (através de
-   `e.target.value`).
-3. A função `setTaskName('A')` é chamada.
-4. O React percebe que o estado mudou e re-renderiza o componente
-   `<MainForm />`.
-5. O componente desenha o input novamente, mas agora passando `value={'A'}`.
-6. A letra "A" aparece na tela.
+1. Quando o React desenha a tela, ele vê a propriedade ref={taskNameInput} no
+   seu <DefaultInput />.
+2. O React pega o elemento HTML real do input (<input type="text"...>) e guarda
+   dentro de taskNameInput.current.
+3. O usuário digita "Estudar React". O componente não é re-renderizado.
+4. O usuário clica em enviar.
+5. A função handleCreateNewTask é chamada.
+6. Nós lemos taskNameInput.current.value, que neste exato segundo contém a
+   string "Estudar React".
 
-Tudo isso acontece em milissegundos **para cada** tecla que você digita!
+## ⚖️ Qual usar? `useState` (Controlado) ou `useRef` (Não-Controlado)?
 
-## ⚠️ Um Alerta (Mas não precisa surtar!)
+Como regra geral no mercado de React:
 
-Como vimos no passo a passo acima, um input controlado faz o componente ser
-renderizado novamente a cada única tecla digitada.
+- **Use** `useState` **(Controlado) quando:** Você precisar reagir imediatamente
+  ao que o usuário digita. Exemplos: mostrar uma mensagem de erro enquanto ele
+  digita uma senha curta, formatar um CPF automaticamente (`123.4...`), ou
+  desabilitar um botão até que o campo esteja preenchido.
 
-**Isso vai deixar meu site lento?** Na imensa maioria das vezes: **NÃO**. Para
-formulários normais (tela de login, cadastro, pomodoro, etc.), os navegadores
-modernos lidam com essas renderizações com as mãos amarradas nas costas.
+**Use** `useRef` **(Não-Controlado) quando:** Você só se importa com o valor
+**no momento do envio** do formulário. É mais simples, escreve menos código e
+evita renderizações desnecessárias.
 
-No entanto, se você estiver construindo um formulário absurdamente gigante (ex:
-uma planilha com 100 campos na mesma tela), essa técnica pode causar lentidão.
-
-Para esses casos raros (e também para conhecermos outras ferramentas do React),
-existe uma segunda forma de capturar dados de inputs sem causar
-re-renderizações. É a técnica dos Inputs Não-Controlados usando Refs.
+Como no nosso Pomodoro nós só precisamos saber o nome da tarefa quando o usuário
+clica no "Play", a técnica do `useRef` cai como uma luva. E é com ela que
+seguiremos!
