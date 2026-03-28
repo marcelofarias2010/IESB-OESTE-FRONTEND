@@ -1,112 +1,37 @@
-# 🗂️ Organizando a Casa: Separando o Contexto em Arquivos
+# 🚀 Iniciando a Lógica: Capturando o Envio do Formulário
 
-Colocar tudo em um arquivo só foi ótimo para entendermos como as engrenagens da
-Context API se conectam. Mas, na vida real (e para o Vite parar de reclamar no
-console), precisamos separar as responsabilidades.
+Agora que a nossa arquitetura de estado (Context API) está organizada, vamos dar
+uma pausa na complexidade estrutural e começar a dar vida à aplicação. O coração
+do nosso Pomodoro é o botão de "Play" (iniciar ciclo). Ele é, na verdade, o
+botão de envio (submit) do nosso formulário de tarefas.
 
-Vamos "fatiar" aquele nosso arquivo gigante do contexto em quatro arquivos
-menores e mais focados.
+Nesta aula, vamos interceptar esse envio para evitar que o navegador recarregue
+a página, preparando o terreno para capturarmos os dados do input na próxima
+etapa.
 
 ---
 
-## ✂️ 1. O Estado Inicial (`InitialTaskState.ts`)
+## 🛑 O Problema do Comportamento Padrão
 
-Vamos isolar o objeto que define como o nosso estado começa. Como este arquivo
-não tem JSX (não renderiza HTML), a extensão é apenas `.ts`.
+Se você abrir a aba **Network** (Rede) do painel de desenvolvedor do seu
+navegador, limpar os dados e clicar no botão de Play do nosso formulário, verá
+que a página inteira é recarregada.
 
-**Arquivo:** `src/contexts/InitialTaskState.ts` _(ou na pasta models/onde
-preferir, seguindo a aula)_
+Esse é o comportamento padrão do HTML: ao dar _submit_ em um `<form>`, ele tenta
+enviar os dados para algum lugar e recarrega a tela. No React (que constrói
+aplicações de página única - _SPA_), nós **nunca** queremos que a página
+recarregue! Nós mesmos vamos gerenciar esses dados via JavaScript.
 
-```typescript
-import type { TaskStateModel } from '../models/TaskStateModel';
+---
 
-export const initialTaskState: TaskStateModel = {
-  tasks: [],
-  secondsRemaining: 0,
-  formattedSecondsRemaining: '00:00',
-  activeTask: null,
-  currentCycle: 0,
-  config: {
-    workTime: 25,
-    shortBreakTime: 5,
-    longBreakTime: 15,
-  },
-};
-```
+## 🎯 Interceptando o Envio (`MainForm.tsx`)
 
-## 🧠 2. A Criação do Contexto (`TaskContext.ts`)
+Vamos criar uma função para lidar com o envio do formulário (`onSubmit`).
 
-Aqui vai ficar apenas a tipagem e a criação do contexto em si. Novamente, sem
-JSX, então usamos a extensão `.ts`.
-
-**Arquivo:** `src/contexts/TaskContext.ts`
-
-```tsx
-import { createContext } from 'react';
-import type { TaskStateModel } from '../models/TaskStateModel';
-import { initialTaskState } from './InitialTaskState';
-
-export type TaskContextProps = {
-  state: TaskStateModel;
-  setState: React.Dispatch<React.SetStateAction<TaskStateModel>>;
-};
-
-const initialContextValue = {
-  state: initialTaskState,
-  setState: () => {},
-};
-
-export const TaskContext = createContext<TaskContextProps>(initialContextValue);
-```
-
-## 🛡️ 3. O Componente Provider (`TaskContextProvider.tsx`)
-
-Este é o componente que vai "abraçar" a aplicação e fornecer o useState de
-verdade. Como ele retorna JSX (o `<TaskContext.Provider>`), a extensão precisa
-ser `.tsx`.
-
-**Arquivo:** `src/contexts/TaskContextProvider.tsx`
-
-```tsx
-import { useState } from 'react';
-import { TaskContext } from './TaskContext';
-import { initialTaskState } from './InitialTaskState';
-
-type TaskContextProviderProps = {
-  children: React.ReactNode;
-};
-
-export function TaskContextProvider({ children }: TaskContextProviderProps) {
-  const [state, setState] = useState(initialTaskState);
-
-  return (
-    <TaskContext.Provider value={{ state, setState }}>
-      {children}
-    </TaskContext.Provider>
-  );
-}
-```
-
-## 🪝 4. O Custom Hook (`useTaskContext.ts`)
-
-Por fim, o atalho para os componentes filhos consumirem o contexto.
-
-**Arquivo:** `src/contexts/useTaskContext.ts`
-
-```tsx
-import { useContext } from 'react';
-import { TaskContext } from './TaskContext';
-
-export function useTaskContext() {
-  return useContext(TaskContext);
-}
-```
-
-## 🧹 5. Limpando a Bagunça do Formulário (`MainForm.tsx`)
-
-Aquele botão de teste ("Alterar para 21:00") cumpriu seu papel, mas agora é hora
-de voltar ao mundo real. Vamos apagá-lo e preparar a função real que vai lidar
-com o envio do formulário (`onSubmit`).
+> 💡 **Dica de TypeScript:** Se você não souber qual é o tipo do evento, você
+> pode criar uma função anônima provisória dentro do `onSubmit={(e) => {}}`,
+> passar o mouse por cima do `e` e o VS Code vai te mostrar a tipagem exata para
+> você copiar! Neste caso, é `React.FormEvent<HTMLFormElement>`.
 
 **Arquivo:** `src/components/MainForm/index.tsx`
 
@@ -115,19 +40,25 @@ import { PlayCircleIcon } from 'lucide-react';
 import { Cycles } from '../Cycles';
 import { DefaultButton } from '../DefaultButton';
 import { DefaultInput } from '../DefaultInput';
-import { useTaskContext } from '../../contexts/useTaskContext'; // <-- Atualize a importação!
+import { useTaskContext } from '../../contexts/useTaskContext';
 
 export function MainForm() {
-  // Já deixamos o Hook preparado aqui, usaremos em breve
   const { setState } = useTaskContext();
 
-  // Função que vai interceptar o recarregamento da página ao enviar o form
+  // 1. Criamos a função Handler para o formulário
   function handleCreateNewTask(event: React.FormEvent<HTMLFormElement>) {
+    // 2. Previne o comportamento padrão (recarregar a página)
     event.preventDefault();
+
+    // 3. Log de teste para confirmar que funcionou
     console.log('DEU CERTO');
   }
 
+  // Apenas removi a função handleClick do botão de teste da aula passada,
+  // pois já limpamos isso no passo anterior.
+
   return (
+    // 4. Conectamos a nossa função ao evento onSubmit do form
     <form onSubmit={handleCreateNewTask} className='form' action=''>
       <div className='formRow'>
         <DefaultInput
@@ -154,29 +85,16 @@ export function MainForm() {
 }
 ```
 
-## 🔌 6. Corrigindo as Importações no `App` e no `CountDown`
+## ✅ Testando o Resultado
 
-Como mudamos os arquivos de lugar, não se esqueça de atualizar as importações (o
-VS Code geralmente ajuda com isso se você apagar o caminho e digitar de novo).
+1. Abra o console do seu navegador.
+2. Clique no botão de Play no seu formulário.
+3. Você deve ver a mensagem "DEU CERTO" aparecer no console.
+4. **O mais importante:** A página **não** deve recarregar e a aba Network não
+   deve disparar novas requisições de recarregamento de página.
 
-**No** `src/App.tsx:`
-
-```tsx
-// Atualize para puxar do arquivo específico do Provider
-import { TaskContextProvider } from './contexts/TaskContextProvider';
-```
-
-**No** `src/components/CountDown/index.tsx:`
-
-```tsx
-// Atualize para puxar do arquivo específico do Hook
-import { useTaskContext } from '../../contexts/useTaskContext';
-```
-
-## 🎯 Conclusão
-
-Pronto! Seu terminal deve estar livre de erros, o _Fast Refresh_ voltou a
-funcionar perfeitamente e a nossa base arquitetural está impecável.
-
-A partir de agora, não teremos mais dados falsos de teste: vamos começar a
-construir a lógica real da nossa aplicação Pomodoro!
+**Próximos Passos:** Conseguimos segurar o formulário! Agora precisamos
+descobrir o que o usuário digitou dentro do nosso campo de texto. Como o nosso
+`<DefaultInput />` é um componente customizado, capturar o valor dele exige uma
+técnica específica no React (o conceito de _forwardRef_ ou o uso de estados
+controlados).
