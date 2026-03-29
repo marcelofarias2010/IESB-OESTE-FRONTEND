@@ -4,7 +4,6 @@ import styles from './styles.module.css';
 export function Menu() {
   return (
     <nav className={styles.menu}>
-      {/* Futuramente, trocaremos a tag <a> por componentes de Link de um Router */}
       <a className={styles.menuLink} href='#'>
         <HouseIcon />
       </a>

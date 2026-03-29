@@ -21,7 +21,7 @@ body {
     'Open Sans',
     'Helvetica Neue',
     sans-serif;
-  font-size: 1.6rem; /* 16px */
+  font-size: 1.6rem;
   background: var(--gray-900);
   color: var(--text-default);
 }
@@ -30,7 +30,6 @@ body {
   width: 100%;
 }
 
-/* Centralizando e empilhando os itens do formulário */
 .form {
   display: flex;
   align-items: center;
@@ -39,7 +38,6 @@ body {
   gap: 2.4rem;
 }
 
-/* O mesmo alinhamento para o conteúdo interno de cada "linha" */
 .formRow {
   display: flex;
   align-items: center;

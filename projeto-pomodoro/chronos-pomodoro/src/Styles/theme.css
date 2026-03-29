@@ -1,37 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
 :root {
-  --gray-100: #e6e9f0;
-  --gray-200: #cdd3e1;
-  --gray-300: #aab3cc;
-  --gray-400: #555f7d;
-  --gray-500: #454f6a;
-  --gray-600: #363d56;
-  --gray-700: #272f43;
-  --gray-800: #181f2e;
-  --gray-900: #0a0f1a;
+  --gray-100: #f4f4f9;
+  --gray-200: #e0e0ea;
+  --gray-300: #b5b5c8;
+  --gray-400: #8888a3;
+  --gray-500: #62627e;
+  --gray-600: #46465e;
+  --gray-700: #2d2d42;
+  --gray-800: #1b1b29;
+  --gray-900: #13131f;
 
-  --primary-light: #4de7b7;
-  --primary: #0da170;
-  --primary-dark: #065f46;
+  --primary-light: #b47cff;
+  --primary: #8a2be2;
+  --primary-dark: #5c11a6;
 
-  --link-color: #10b981;
-  --link-hover: #0b8a60;
+  --link-color: #b47cff;
+  --link-hover: #e0b3ff;
 
-  --success: #22c55e;
-  --warning: #eab308;
-  --error: #991b1b;
-  --info: #0ea5e9;
+  --success: #00f5d4;
+  --warning: #fee440;
+  --error: #f15bb5;
+  --info: #00bbf9;
 
-  --text-over-primary: #0a0f1a;
-  --text-over-primary-dark: #e6e9f0;
-  --text-over-primary-light: #0a0f1a;
-  --text-over-success: #0a0f1a;
-  --text-over-warning: #0a0f1a;
-  --text-over-error: #e6e9f0;
-  --text-over-info: #0a0f1a;
+  --text-over-primary: #ffffff;
+  --text-over-primary-dark: #e0e0ea;
+  --text-over-primary-light: #13131f;
+  --text-over-success: #13131f;
+  --text-over-warning: #13131f;
+  --text-over-error: #ffffff;
+  --text-over-info: #13131f;
 
-  --text-default: #e6e9f0;
-  --text-muted: #aab3cc;
+  --text-default: #e0e0ea;
+  --text-muted: #8888a3;
 
-  --disabled: #555f7d;
-  --text-disabled: #aab3cc;
+  --disabled: #2d2d42;
+  --text-disabled: #62627e;
 }

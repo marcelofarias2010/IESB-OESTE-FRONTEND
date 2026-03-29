@@ -1,4 +1,3 @@
-/* Container principal (Texto + Bolinhas) */
 .cycles {
   display: flex;
   flex-direction: column;
@@ -7,21 +6,18 @@
   gap: 1.6rem;
 }
 
-/* Container que segura as bolinhas lado a lado */
 .cycleDots {
   display: flex;
   gap: 0.8rem;
 }
 
-/* A bolinha base */
 .cycleDot {
   width: 2rem;
   height: 2rem;
-  background-color: var(--primary); /* Cor base */
-  border-radius: 50%; /* Transforma o quadrado em círculo */
+  background-color: var(--primary);
+  border-radius: 50%;
 }
 
-/* Cores específicas para os diferentes tipos de ciclo */
 .workTime {
   background: var(--warning);
 }
