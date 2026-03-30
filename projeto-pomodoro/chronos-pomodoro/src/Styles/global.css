@@ -1,0 +1,99 @@
+/* Variáveis de cor (facilita manutenção e deixa mais profissional) */
+:root {
+  --bg: #0f172a;           /* fundo escuro elegante */
+  --card: #111827;         /* fundo do formulário */
+  --primary: #6366f1;      /* roxo moderno */
+  --primary-hover: #4f46e5;
+  --text: #e5e7eb;         /* texto claro */
+  --text-soft: #9ca3af;    /* texto secundário */
+  --border: #1f2937;
+}
+
+/* Fundo geral */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+}
+
+/* Formulário central */
+.form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  
+  gap: 2rem;
+  padding: 2.5rem;
+
+  background: var(--card);
+  border-radius: 1.5rem;
+  border: 1px solid var(--border);
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* Linhas do formulário */
+.formRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* Inputs modernos */
+input {
+  width: 100%;
+  padding: 0.9rem 1rem;
+
+  border-radius: 0.8rem;
+  border: 1px solid var(--border);
+
+  background: transparent;
+  color: var(--text);
+
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+/* Placeholder suave */
+input::placeholder {
+  color: var(--text-soft);
+}
+
+/* Focus moderno */
+input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+}
+
+/* Botão minimalista moderno */
+button {
+  width: 100%;
+  padding: 0.9rem;
+
+  border-radius: 0.8rem;
+  border: none;
+
+  background: var(--primary);
+  color: white;
+
+  font-weight: 600;
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+/* Hover suave */
+button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+/* Active (clique) */
+button:active {
+  transform: scale(0.98);
+}
