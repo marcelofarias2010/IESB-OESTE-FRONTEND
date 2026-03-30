@@ -1,0 +1,45 @@
+:root {
+    /* Escala de cinza mais suave e moderna */
+    --gray-100: #f1f5f9;
+    --gray-200: #e2e8f0;
+    --gray-300: #cbd5e1;
+    --gray-400: #94a3b8;
+    --gray-500: #64748b;
+    --gray-600: #475569;
+    --gray-700: #334155;
+    --gray-800: #1e293b;
+    --gray-900: #0f172a;
+
+    /* Primary mais moderno (indigo elegante) */
+    --primary-light: #818cf8;
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
+
+    /* Links mais coerentes com o primary */
+    --link-color: #6366f1;
+    --link-hover: #4f46e5;
+
+    /* Status com tons atuais (menos saturados) */
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --error: #ef4444;
+    --info: #38bdf8;
+
+    /* Texto sobre cores */
+    --text-over-primary: #ffffff;
+    --text-over-primary-dark: #ffffff;
+    --text-over-primary-light: #0f172a;
+
+    --text-over-success: #052e16;
+    --text-over-warning: #422006;
+    --text-over-error: #ffffff;
+    --text-over-info: #082f49;
+
+    /* Texto padrão */
+    --text-default: #e2e8f0;
+    --text-muted: #94a3b8;
+
+    /* Estados */
+    --disabled: #475569;
+    --text-disabled: #94a3b8;
+}
