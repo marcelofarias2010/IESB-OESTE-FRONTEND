@@ -1,0 +1,14 @@
+.menu {
+  display: flex;
+  gap: 2rem;
+}
+
+.menu a {
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 1.4rem;
+}
+
+.menu a:hover {
+  color: var(--primary);
+}

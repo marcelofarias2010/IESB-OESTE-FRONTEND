@@ -1,0 +1,16 @@
+.button {
+  border: none;
+  padding: 1rem;
+  border-radius: 0.8rem;
+  cursor: pointer;
+}
+
+.green {
+  background: var(--primary);
+  color: white;
+}
+
+.red {
+  background: var(--error);
+  color: white;
+}
