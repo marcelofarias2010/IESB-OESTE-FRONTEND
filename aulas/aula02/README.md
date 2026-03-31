@@ -1,3 +1,0 @@
-- Introdução à linguagem de marcação e criação de páginas web com HTML5.
-- Estrutura básica de um documento HTML e tags semânticas (header, nav, main, section, footer).
-- Criação de páginas com CSS3, abordando seletores, cores, fontes e o Box Model.
