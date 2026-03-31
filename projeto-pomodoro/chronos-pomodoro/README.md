@@ -1,45 +1,57 @@
-# 🔄 Gerenciando os Ciclos do Pomodoro
+# 🎭 Definindo o Tipo do Ciclo: A Lógica "FizzBuzz" do Pomodoro
 
-Vamos focar em resolver um problema por vez, começando pela lógica de contagem
-dos ciclos do nosso Pomodoro!
+Agora que já sabemos controlar os ciclos, vamos usar lógica e matemática básica
+para definir qual é o tipo de tarefa atual (Tempo de Foco, Pausa Curta ou Pausa
+Longa)!
 
-A nossa aplicação possui um fluxo contínuo de ciclos (Tempo de Foco, Pausa
-Curta, Tempo de Foco... até a Pausa Longa). Para o nosso Pomodoro, vamos
-considerar que um fluxo completo tem 8 etapas.
+Na aula passada, nós criamos a função que conta de 1 a 8 e reinicia. Agora,
+precisamos de uma segunda inteligência: dado o número de um ciclo (ex: Ciclo 3),
+qual é o tipo dele?
 
-O nosso estado inicial começa no ciclo `0`. O objetivo agora é fazer com que, a
-cada nova tarefa criada, ele avance para `1, 2, 3...` e, quando chegar no ciclo
-`8`, ele reinicie voltando para o `1`.
+Se analisarmos o padrão do Pomodoro, temos o seguinte:
 
-Como essa é uma lógica pura de JavaScript (não depende de telas ou Hooks), vamos
-separá-la em um arquivo utilitário.
+- **Ímpares (1, 3, 5, 7):** Tempo de Foco (`workTime`)
+- **Pares (2, 4, 6):** Pausa Curta (`shortBreakTime`)
+- **O Ciclo 8 (e seus múltiplos, se houvesse):** Pausa Longa (`longBreakTime`)
+
+Para resolver isso, vamos usar o operador de Módulo (`%`), que pega o **resto da
+divisão** entre dois números. É uma lógica muito parecida com o famoso teste de
+algoritmo "FizzBuzz"!
 
 ---
 
-## 🛠️ 1. Criando a Função Utilitária (`getNextCycle.ts`)
+## 🛠️ 1. Criando a Função Utilitária (`getNextCycleType.ts`)
 
-Vamos criar uma pasta chamada `utils` dentro de `src`. Essa pasta servirá para
-guardarmos funções soltas e reaproveitáveis que resolvem problemas específicos
-de lógica.
+Vamos criar mais um arquivo na nossa pasta `utils`. Dessa vez, além de receber o
+número do ciclo, vamos usar o TypeScript para garantir que o retorno seja
+exatamente um dos três tipos válidos do nosso `TaskModel`.
 
-**Arquivo:** `src/utils/getNextCycle.ts`
+**Arquivo:** `src/utils/getNextCycleType.ts`
 
 ```typescript
-export function getNextCycle(currentCycle: number) {
-  // Se for o estado inicial (0) ou se finalizou o último ciclo (8), volta para 1.
-  // Caso contrário, apenas soma + 1 ao ciclo atual.
-  return currentCycle === 0 || currentCycle === 8 ? 1 : currentCycle + 1;
+import { TaskModel } from '../models/TaskModel';
+
+// Tipamos o retorno para ser exatamente a chave 'type' do TaskModel
+export function getNextCycleType(currentCycle: number): TaskModel['type'] {
+  // 1. Se o resto da divisão por 8 for zero, é a oitava tarefa (Pausa Longa)
+  if (currentCycle % 8 === 0) return 'longBreakTime';
+
+  // 2. Se o resto da divisão por 2 for zero, é um número Par (Pausa Curta)
+  if (currentCycle % 2 === 0) return 'shortBreakTime';
+
+  // 3. Se não caiu em nenhuma das regras acima, só pode ser Ímpar (Tempo de Foco)
+  return 'workTime';
 }
 ```
 
-## 🔌 2. Calculando o Ciclo no Formulário (`MainForm.tsx`)
+## 🔌 2. Aplicando a Lógica no Formulário (`MainForm.tsx`)
 
-Agora precisamos aplicar essa lógica dentro do nosso formulário.
+Agora, voltamos ao nosso `MainForm` e aplicamos essa nova função da mesma forma
+que fizemos com a função de ciclos.
 
-Um detalhe importantíssimo: nós vamos calcular qual é o "próximo ciclo" fora da
-função de clique/envio do formulário. Por que? Porque os textos da nossa tela
-(como aquele parágrafo _"Próximo intervalo é de 25min"_) vão precisar saber qual
-é o ciclo atual antes mesmo do usuário clicar no botão de Play!
+Lembre-se: como estamos trabalhando "um passo à frente", passamos o `nextCycle`
+(que calculamos na aula passada) para a nossa nova função descobrir o
+`nextCycleType`.
 
 **Arquivo:** `src/components/MainForm/index.tsx`
 
@@ -47,29 +59,23 @@ função de clique/envio do formulário. Por que? Porque os textos da nossa tela
 import { useRef } from 'react';
 import { TaskModel } from '../../models/TaskModel';
 import { useTaskContext } from '../../contexts/useTaskContext';
-// 1. Importe a nossa nova função utilitária
 import { getNextCycle } from '../../utils/getNextCycle';
-
-// ... imports dos componentes (DefaultInput, Cycles, etc) ...
+// 1. Importe a nossa nova função
+import { getNextCycleType } from '../../utils/getNextCycleType';
 
 export function MainForm() {
-  // 2. Agora precisamos puxar o 'state' também, além do 'setState'
   const { state, setState } = useTaskContext();
   const taskNameInput = useRef<HTMLInputElement>(null);
 
-  // 3. Calculamos o próximo ciclo ANTES do usuário fazer qualquer coisa.
-  // Como o estado inicial é 0, o nextCycle já começa valendo 1.
+  // 2. Já tínhamos o nextCycle...
   const nextCycle = getNextCycle(state.currentCycle);
+  // 3. ...agora calculamos o tipo com base no próximo ciclo!
+  const nextCycleType = getNextCycleType(nextCycle);
 
   function handleCreateNewTask(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (taskNameInput.current === null) return;
-    const taskName = taskNameInput.current.value.trim();
-    if (!taskName) {
-      alert('Digite o nome da tarefa');
-      return;
-    }
+    // ... validações do input ...
 
     const newTask: TaskModel = {
       id: Date.now().toString(),
@@ -78,24 +84,15 @@ export function MainForm() {
       completeDate: null,
       interruptDate: null,
       duration: 1,
-      type: 'workTime',
+
+      // 4. Substituímos o valor fixo 'workTime' pela nossa variável calculada
+      type: nextCycleType,
     };
 
     const secondsRemaining = newTask.duration * 60;
 
     setState(prevState => {
-      return {
-        ...prevState,
-        config: { ...prevState.config },
-        activeTask: newTask,
-
-        // 4. Substituímos o valor fixo '1' pela nossa variável calculada
-        currentCycle: nextCycle,
-
-        secondsRemaining, // Conferir depois
-        formattedSecondsRemaining: '00:00', // Conferir depois
-        tasks: [...prevState.tasks, newTask],
-      };
+      // ... retorno do setState atualizando o estado global ...
     });
   }
 
@@ -103,24 +100,19 @@ export function MainForm() {
 }
 ```
 
-## 🧠 Entendendo o Fluxo de Renderização (O Pulo do Gato)
+## ✅ Testando o Fluxo Completo
 
-Pode parecer um pouco confuso calcular o `nextCycle` fora da função de criar
-tarefa, mas o React funciona assim:
+É hora de validar se a nossa matemática funcionou! Com o seu "espião"
+(`console.log` dentro do `useEffect` lá no `TaskContextProvider`) ainda ativo,
+siga os passos:
 
-1. A tela carrega. O `state.currentCycle` é 0.
-2. O componente lê a linha `const nextCycle = getNextCycle(0)`, então a variável
-   nextCycle passa a valer 1. A tela fica aguardando.
-3. O usuário digita uma tarefa e clica em Play.
-4. A função `handleCreateNewTask` é disparada e atualiza o estado global,
-   definindo o ciclo atual como 1.
-5. O estado mudou! O React re-renderiza todo o `<MainForm />`.
-6. O componente lê novamente a linha `const nextCycle = getNextCycle(1)`, e
-   agora a variável fica engatilhada valendo **2**, pronta para quando o usuário
-   finalizar essa tarefa e for iniciar a próxima.
+1. Inicie uma tarefa ("Tarefa 1"). Olhe no console, abra a `activeTask`: o type
+   deve ser `workTime`.
+2. Inicie a segunda ("Tarefa 2"). O type deve ser `shortBreakTime`.
+3. Continue iniciando tarefas até a 8ª.
+4. Na 8ª tarefa, o type deve ser obrigatoriamente `longBreakTime`.
+5. Se você iniciar a 9ª tarefa, o ciclo deve voltar a ser 1 e o type volta a ser
+   `workTime`.
 
-Nós estamos sempre um passo à frente, preparando os dados do próximo ciclo!
-
-Temos a gestão dos ciclos funcionando! Com essa informação em mãos, podemos
-determinar se o ciclo atual é um momento de Foco (`workTime`) ou uma Pausa
-(`breakTime`), além de ajustar a duração de acordo com as configurações.
+Se os logs bateram, parabéns! Você acabou de criar o motor principal das regras
+de negócio do seu Pomodoro.
