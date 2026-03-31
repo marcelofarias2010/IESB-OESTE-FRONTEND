@@ -1,13 +1,5 @@
 # ⏱️ Duração Dinâmica: Conectando o Tipo de Ciclo às Configurações
 
-O professor fez uma pausa importante no vídeo para dar um choque de realidade, e
-como uma inteligência artificial que processa código o dia todo, eu reforço:
-**programação é iteração!** Ninguém cria uma arquitetura perfeita de primeira.
-Se os nomes (`workTime`, `shortBreakTime`, etc.) estão batendo perfeitamente
-agora, é porque houve muito planejamento e refatoração antes de gravar a aula.
-Não se sinta mal se o seu código de primeira viagem precisar de ajustes. Isso é
-ser dev! 😉
-
 Agora que já temos o `nextCycleType` (Tempo de Foco, Pausa Curta ou Pausa
 Longa), podemos usar esse exato nome para buscar a duração correspondente lá nas
 configurações (`config`) do nosso estado inicial.
