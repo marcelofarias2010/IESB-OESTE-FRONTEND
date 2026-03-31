@@ -1,0 +1,101 @@
+:root {
+    --bg-dark: #0a0f18;
+    --emerald-green: #10a37f;
+    --pure-white: #ffffff;
+    --gray-text: #8e9297;
+    --nav-bg: #162130;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--pure-white);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    text-align: center;
+    width: 100%;
+    max-width: 450px;
+}
+
+/* Header */
+.logo {
+    color: var(--emerald-green);
+    margin-bottom: 25px;
+}
+.logo h1 { font-size: 1.8rem; margin: 5px 0; font-weight: 600; }
+
+.menu-icons {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 40px;
+}
+
+.btn-nav {
+    background: var(--nav-bg);
+    border: none;
+    color: var(--emerald-green);
+    padding: 12px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-nav.active {
+    background: var(--emerald-green);
+    color: var(--bg-dark);
+}
+
+/* Timer */
+.timer-display {
+    font-size: 7.5rem;
+    font-weight: 700;
+    margin: 30px 0;
+    letter-spacing: -2px;
+}
+
+/* Task Input */
+.task-section { margin-bottom: 40px; }
+.label-task { color: var(--gray-text); font-size: 0.9rem; margin-bottom: 8px; }
+
+#taskInput {
+    background: transparent;
+    border: none;
+    border-bottom: 1.5px solid var(--emerald-green);
+    color: var(--pure-white);
+    text-align: center;
+    padding: 10px;
+    width: 220px;
+    outline: none;
+    font-size: 1rem;
+}
+
+.next-cycle { color: var(--pure-white); font-size: 0.85rem; margin-top: 15px; }
+
+/* Play Button */
+.play-btn {
+    background-color: var(--emerald-green);
+    border: none;
+    border-radius: 10px;
+    width: 200px;
+    padding: 18px;
+    color: var(--bg-dark);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.play-btn:hover {
+    background-color: #0d8a6b;
+    transform: translateY(-2px);
+}
+
+/* Footer */
+footer { margin-top: 50px; }
+.link-info { color: var(--gray-text); text-decoration: none; font-size: 0.8rem; display: block; margin-bottom: 8px; }
+.copyright { color: var(--gray-text); font-size: 0.75rem; }

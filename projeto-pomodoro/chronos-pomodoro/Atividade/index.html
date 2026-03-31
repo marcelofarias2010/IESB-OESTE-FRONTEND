@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronos - Green Edition</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fa-regular fa-clock"></i>
+                <h1>Chronos</h1>
+            </div>
+            <nav class="menu-icons">
+                <button class="btn-nav active"><i class="fa-solid fa-house"></i></button>
+                <button class="btn-nav"><i class="fa-solid fa-history"></i></button>
+                <button class="btn-nav"><i class="fa-solid fa-gear"></i></button>
+                <button class="btn-nav"><i class="fa-solid fa-sun"></i></button>
+            </nav>
+        </header>
+
+        <main>
+            <div class="timer-display" id="timer">25:00</div>
+            
+            <div class="task-section">
+                <p class="label-task">task</p>
+                <input type="text" placeholder="Digite algo" id="taskInput">
+                <p class="next-cycle">Próximo ciclo é de <strong>25min</strong></p>
+            </div>
+
+            <button class="play-btn" id="startBtn">
+                <i class="fa-solid fa-play" id="playIcon"></i>
+            </button>
+        </main>
+
+        <footer>
+            <a href="#" class="link-info">Entenda como funciona a técnica pomodoro</a>
+            <p class="copyright">Chronos Pomodoro © 2026 - Feito com 💚</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
