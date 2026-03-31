@@ -1,0 +1,15 @@
+:root {
+  --primary: #7c3aed;
+  --error: #ef4444;
+  --warning: #f59e0b;
+  --info: #3b82f6;
+
+  --text-default: #e5e7eb;
+  --text-muted: #9ca3af;
+
+  --background: #0f172a;
+
+  --text-over-primary: #fff;
+  --text-over-error: #fff;
+  --disabled: #6b7280;
+}
