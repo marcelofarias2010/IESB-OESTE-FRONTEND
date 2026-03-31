@@ -1,118 +1,87 @@
-# 🎭 Definindo o Tipo do Ciclo: A Lógica "FizzBuzz" do Pomodoro
+# ⏱️ Duração Dinâmica: Conectando o Tipo de Ciclo às Configurações
 
-Agora que já sabemos controlar os ciclos, vamos usar lógica e matemática básica
-para definir qual é o tipo de tarefa atual (Tempo de Foco, Pausa Curta ou Pausa
-Longa)!
+O professor fez uma pausa importante no vídeo para dar um choque de realidade, e
+como uma inteligência artificial que processa código o dia todo, eu reforço:
+**programação é iteração!** Ninguém cria uma arquitetura perfeita de primeira.
+Se os nomes (`workTime`, `shortBreakTime`, etc.) estão batendo perfeitamente
+agora, é porque houve muito planejamento e refatoração antes de gravar a aula.
+Não se sinta mal se o seu código de primeira viagem precisar de ajustes. Isso é
+ser dev! 😉
 
-Na aula passada, nós criamos a função que conta de 1 a 8 e reinicia. Agora,
-precisamos de uma segunda inteligência: dado o número de um ciclo (ex: Ciclo 3),
-qual é o tipo dele?
-
-Se analisarmos o padrão do Pomodoro, temos o seguinte:
-
-- **Ímpares (1, 3, 5, 7):** Tempo de Foco (`workTime`)
-- **Pares (2, 4, 6):** Pausa Curta (`shortBreakTime`)
-- **O Ciclo 8 (e seus múltiplos, se houvesse):** Pausa Longa (`longBreakTime`)
-
-Para resolver isso, vamos usar o operador de Módulo (`%`), que pega o **resto da
-divisão** entre dois números. É uma lógica muito parecida com o famoso teste de
-algoritmo "FizzBuzz"!
+Agora que já temos o `nextCycleType` (Tempo de Foco, Pausa Curta ou Pausa
+Longa), podemos usar esse exato nome para buscar a duração correspondente lá nas
+configurações (`config`) do nosso estado inicial.
 
 ---
 
-## 🛠️ 1. Criando a Função Utilitária (`getNextCycleType.ts`)
+## 🔗 1. Configurando a Duração Dinâmica (`MainForm.tsx`)
 
-Vamos criar mais um arquivo na nossa pasta `utils`. Dessa vez, além de receber o
-número do ciclo, vamos usar o TypeScript para garantir que o retorno seja
-exatamente um dos três tipos válidos do nosso `TaskModel`.
-
-**Arquivo:** `src/utils/getNextCycleType.ts`
-
-```typescript
-import { TaskModel } from '../models/TaskModel';
-
-// Tipamos o retorno para ser exatamente a chave 'type' do TaskModel
-export function getNextCycleType(currentCycle: number): TaskModel['type'] {
-  // 1. Se o resto da divisão por 8 for zero, é a oitava tarefa (Pausa Longa)
-  if (currentCycle % 8 === 0) return 'longBreakTime';
-
-  // 2. Se o resto da divisão por 2 for zero, é um número Par (Pausa Curta)
-  if (currentCycle % 2 === 0) return 'shortBreakTime';
-
-  // 3. Se não caiu em nenhuma das regras acima, só pode ser Ímpar (Tempo de Foco)
-  return 'workTime';
-}
-```
-
-## 🔌 2. Aplicando a Lógica no Formulário (`MainForm.tsx`)
-
-Agora, voltamos ao nosso `MainForm` e aplicamos essa nova função da mesma forma
-que fizemos com a função de ciclos.
-
-Lembre-se: como estamos trabalhando "um passo à frente", passamos o `nextCycle`
-(que calculamos na aula passada) para a nossa nova função descobrir o
-`nextCycleType`.
+A mágica acontece porque as chaves do objeto `state.config` têm exatamente os
+mesmos nomes que os tipos de ciclo do nosso `TaskModel`. Com isso, podemos
+acessar o valor dinamicamente usando colchetes: `state.config[nextCycleType]`.
 
 **Arquivo:** `src/components/MainForm/index.tsx`
 
 ```tsx
-import { useRef } from 'react';
-import { TaskModel } from '../../models/TaskModel';
-import { useTaskContext } from '../../contexts/useTaskContext';
-import { getNextCycle } from '../../utils/getNextCycle';
-// 1. Importe a nossa nova função
-import { getNextCycleType } from '../../utils/getNextCycleType';
+function handleCreateNewTask(event: React.FormEvent<HTMLFormElement>) {
+  // ... validações ...
 
-export function MainForm() {
-  const { state, setState } = useTaskContext();
-  const taskNameInput = useRef<HTMLInputElement>(null);
+  const newTask: TaskModel = {
+    id: Date.now().toString(),
+    name: taskName,
+    startDate: new Date(),
+    completeDate: null,
+    interruptDate: null,
 
-  // 2. Já tínhamos o nextCycle...
-  const nextCycle = getNextCycle(state.currentCycle);
-  // 3. ...agora calculamos o tipo com base no próximo ciclo!
-  const nextCycleType = getNextCycleType(nextCycle);
+    // Substituímos o valor fixo (1) pela busca dinâmica no estado de configurações
+    duration: state.config[nextCycleType],
 
-  function handleCreateNewTask(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+    type: nextCycleType,
+  };
 
-    // ... validações do input ...
+  // Agora o secondsRemaining será calculado com base na duração correta!
+  const secondsRemaining = newTask.duration * 60;
 
-    const newTask: TaskModel = {
-      id: Date.now().toString(),
-      name: taskName,
-      startDate: new Date(),
-      completeDate: null,
-      interruptDate: null,
-      duration: 1,
-
-      // 4. Substituímos o valor fixo 'workTime' pela nossa variável calculada
-      type: nextCycleType,
-    };
-
-    const secondsRemaining = newTask.duration * 60;
-
-    setState(prevState => {
-      // ... retorno do setState atualizando o estado global ...
-    });
-  }
-
-  // ... return do JSX ...
+  // ... setState ...
 }
 ```
 
-## ✅ Testando o Fluxo Completo
+## ✅ 2. Testando a Duração
 
-É hora de validar se a nossa matemática funcionou! Com o seu "espião"
-(`console.log` dentro do `useEffect` lá no `TaskContextProvider`) ainda ativo,
-siga os passos:
+Com o nosso console aberto (aquele log dentro do `useEffect`), você pode testar
+o fluxo de tarefas:
 
-1. Inicie uma tarefa ("Tarefa 1"). Olhe no console, abra a `activeTask`: o type
-   deve ser `workTime`.
-2. Inicie a segunda ("Tarefa 2"). O type deve ser `shortBreakTime`.
-3. Continue iniciando tarefas até a 8ª.
-4. Na 8ª tarefa, o type deve ser obrigatoriamente `longBreakTime`.
-5. Se você iniciar a 9ª tarefa, o ciclo deve voltar a ser 1 e o type volta a ser
-   `workTime`.
+1. Primeira Tarefa: O `duration` deve puxar 25 (e o `secondsRemaining` será
+   1500).
+2. Segunda Tarefa (Pausa Curta): O `duration` deve puxar 5.
+3. Oitava Tarefa (Pausa Longa): O `duration` deve puxar 15.
 
-Se os logs bateram, parabéns! Você acabou de criar o motor principal das regras
-de negócio do seu Pomodoro.
+Tudo batendo? Maravilha!
+
+## 🔜 Preparando o Terreno: Formatando os Segundos
+
+Para adiantar, você já pode criar o arquivo utilitário que fará essa matemática.
+Ele pegará o total de segundos e dividirá em minutos e segundos restantes:
+
+**Arquivo:** `src/utils/formatSecondsToMinutes.ts`
+
+```tsx
+export function formatSecondsToMinutes(seconds: number) {
+  // Pega a parte inteira dos minutos e garante que tenha 2 dígitos (ex: "05")
+  const minutes = String(Math.floor(seconds / 60)).padStart(2, '0');
+
+  // Pega o resto da divisão por 60 (os segundos que sobraram) e garante 2 dígitos
+  const secondsMod = String(Math.floor(seconds % 60)).padStart(2, '0');
+
+  return `${minutes}:${secondsMod}`;
+}
+```
+
+E no seu `MainForm.tsx`, você aplicará essa função direto no `setState`:
+
+```tsx
+import { formatSecondsToMinutes } from '../../utils/formatSecondsToMinutes';
+
+// ... dentro da criação da task ...
+        formattedSecondsRemaining: formatSecondsToMinutes(secondsRemaining),
+```
