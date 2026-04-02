@@ -1,85 +1,101 @@
-## 🛑 Alternando os Botões: Iniciar e Interromper Tarefa
+## 🐛 Interrompendo Tarefas e o "Bug do React Confuso"
 
-Mais uma melhoria de usabilidade super simples, mas que faz toda a diferença
-visualmente! Agora que o nosso input já fica bloqueado quando uma tarefa está
-rolando, precisamos dar ao usuário um botão para parar essa tarefa.
+Sabe aquele momento em que você jura que o código está perfeitamente certo, mas
+ao testar acontece um comportamento bizarro e inexplicável? Foi exatamente o que
+rolou nesta aula!
 
-Como não faz sentido ter dois botões na tela ao mesmo tempo (um de iniciar e um
-de parar), vamos usar o nosso estado `activeTask` para **alternar** qual botão é
-exibido.
+Vamos primeiro criar a lógica para interromper a tarefa e, em seguida, entender
+como resolver o bug do formulário enviando sozinho.
 
-## 🔄 1. A Lógica Condicional (O Operador Ternário)
+## 🛑 1. Criando a Função `handleInterruptTask`
 
-Vamos usar um operador ternário (`condição ? verdadeiro : falso`) no JSX para
-decidir qual botão renderizar:
+Quando o usuário clica no botão vermelho de parar, precisamos zerar a tarefa
+ativa e os cronômetros, mas **não** vamos zerar o ciclo (`currentCycle`), pois o
+usuário continua na jornada dele, apenas interrompeu uma etapa.
 
-- **Se NÃO houver tarefa ativa** (`!state.activeTask`): Exibimos o botão de
-  "Iniciar". Esse botão precisa continuar com o `type='submit'` para disparar o
-  envio do formulário.
-- **Se houver tarefa ativa:** Exibimos o botão de "Interromper".
+Lá no seu `MainForm.tsx`, adicione essa função (pode ser logo abaixo do
+`handleCreateNewTask`):
 
-**⚠️ Atenção ao detalhe:** O botão de interromper **DEVE** ter o
-`type='button'`. Se você deixar como `submit` (ou não declarar, já que o padrão
-dentro de um form costuma ser submit), ao clicar nele, o navegador tentará
-enviar o formulário novamente, causando um recarregamento indesejado ou bugs na
-aplicação.
-
-_Dica de Ouro:_ Repare que no código escrevemos `task` e `activeTask` (em
-inglês), mas para o usuário (no `aria-label` e `title`) escrevemos "Interromper
-tarefa atual" (em português). É uma ótima prática manter o código em inglês e a
-interface no idioma do seu público!
-
-## 💻 2. Aplicando no Código (`MainForm.tsx`)
-
-Primeiro, não se esqueça de importar o ícone de "Stop" lá no topo do arquivo
-junto com o ícone de "Play".
-
-```tsx
-// Adicione o StopCircleIcon na importação do lucide-react
-import { PlayCircleIcon, StopCircleIcon } from 'lucide-react';
+```jsx
+function handleInterruptTask() {
+  setState(prevState => {
+    return {
+      ...prevState,
+      activeTask: null, // Remove a tarefa ativa
+      secondsRemaining: 0, // Zera os segundos totais
+      formattedSecondsRemaining: '00:00', // Zera o texto do relógio
+    };
+  });
+}
 ```
 
-Agora, vamos substituir a renderização do botão no final do nosso formulário:
+E, claro, precisamos conectar essa função ao `onClick` do nosso botão vermelho
+de interrupção no JSX.
+
+## 🤯 2. O Bug: Por que o Formulário Envia Sozinho?
+
+Se você apenas adicionar o `onClick` e usar o **operador ternário**
+(`condição ? botao1 : botao2`) como fizemos na aula anterior, vai notar um bug
+crítico: ao clicar em "Parar", a tarefa para, mas **imediatamente o formulário é
+enviado de novo**, iniciando a próxima tarefa.
+
+**O que está acontecendo por baixo dos panos?** O React tenta ser o mais rápido
+e otimizado possível. Quando usamos um ternário para alternar entre dois
+elementos muito parecidos (dois `<DefaultButton />`), o React entra em um
+processo de Reconciliação.
+
+Ele pensa: "_Hum, saiu um botão e entrou outro botão no exato mesmo lugar. Em
+vez de destruir o primeiro no HTML e criar um novo do zero, vou apenas
+reaproveitar o botão antigo e trocar a cor e o ícone_". O problema é que, ao
+fazer essa reciclagem super rápida, ele acaba carregando o comportamento de
+`submit` do botão anterior, disparando o formulário novamente!
+
+## 🛠️ 3. A Solução: Separando os Componentes
+
+Existem várias formas de resolver isso (como usar `e.preventDefault()`), mas a
+forma mais robusta e "limpa" para o React entender que são dois botões
+completamente diferentes é:
+
+1. **Remover o operador ternário** e usar a checagem lógica independente (&&).
+2. **Adicionar uma propriedade** `key` única no botão de interromper, forçando o
+   React a reconhecê-lo como um elemento totalmente novo.
+
+Vamos atualizar o final do nosso formulário:
 
 **Arquivo:** `src/components/MainForm/index.tsx`
 
 ```tsx
-// ... (resto do código)
+// ... (resto do formulário)
 
       <div className='formRow'>
-        {!state.activeTask ? (
+        {/* Renderiza apenas se NÃO houver tarefa ativa */}
+        {!state.activeTask && (
           <DefaultButton
             aria-label='Iniciar nova tarefa'
             title='Iniciar nova tarefa'
             type='submit'
             icon={<PlayCircleIcon />}
           />
-        ) : (
+        )}
+
+        {/* Renderiza apenas se HOUVER tarefa ativa */}
+        {!!state.activeTask && (
           <DefaultButton
             aria-label='Interromper tarefa atual'
             title='Interromper tarefa atual'
             type='button'
             color='red'
             icon={<StopCircleIcon />}
+            onClick={handleInterruptTask}
+            key='botao_button' // A chave mágica que evita a confusão do React!
           />
         )}
       </div>
     </form>
-  );
-}
 ```
 
-## ✅ 3. Testando o Comportamento
-
-1. Atualize a página. Você deve ver o botão verde com o ícone de Play (estado
-   inicial sem tarefa).
-2. Digite o nome de uma tarefa e clique em Iniciar (ou aperte Enter).
-3. **Mágica!** O input será bloqueado e o botão verde se transformará
-   instantaneamente em um botão vermelho com o ícone de Stop.
-4. Se você passar o mouse por cima do botão vermelho, verá o tooltip:
-   "Interromper tarefa atual".
-
-Neste momento, se você clicar no botão vermelho, nada vai acontecer. Por
-enquanto, a única forma de voltar ao botão verde é atualizando a página. Na
-próxima aula, vamos criar exatamente a ação de clique desse botão para parar a
-tarefa e zerar o nosso estado!
+Pronto! Agora o React vai destruir o botão de Submit da tela e criar um botão
+Type Button totalmente novo na DOM, eliminando o comportamento fantasma. Você já
+pode testar criando uma tarefa e a interrompendo: você verá apenas uma
+renderização no seu `console.log` e o input voltará a ficar liberado para
+digitação.
