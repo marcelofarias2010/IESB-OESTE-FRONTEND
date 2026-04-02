@@ -1,79 +1,85 @@
-# 🚫 Desativando o Input Durante uma Tarefa Ativa
+## 🛑 Alternando os Botões: Iniciar e Interromper Tarefa
 
-Vamos adicionar um detalhe de usabilidade super importante: impedir que o
-usuário altere o nome da tarefa enquanto o cronômetro estiver rodando!
+Mais uma melhoria de usabilidade super simples, mas que faz toda a diferença
+visualmente! Agora que o nosso input já fica bloqueado quando uma tarefa está
+rolando, precisamos dar ao usuário um botão para parar essa tarefa.
 
-na aula anterior, o arquivo `Cycles.tsx` acabou ficando com alguns pequenos
-erros de digitação nos textos. Acontece nas melhores famílias quando estamos
-codando e falando ao mesmo tempo! Se você notou algum errinho de texto no seu,
-sinta-se livre para corrigir.
+Como não faz sentido ter dois botões na tela ao mesmo tempo (um de iniciar e um
+de parar), vamos usar o nosso estado `activeTask` para **alternar** qual botão é
+exibido.
 
-Nesta aula, vamos implementar uma das funcionalidades mais simples, porém
-essenciais para a nossa interface: **desativar o campo de input** quando uma
-tarefa estiver em andamento.
+## 🔄 1. A Lógica Condicional (O Operador Ternário)
 
-Se o usuário já iniciou uma tarefa (ou seja, temos uma `activeTask` rodando),
-não faz sentido permitir que ele digite um novo nome de tarefa ali, certo?
-Precisamos bloquear esse campo.
+Vamos usar um operador ternário (`condição ? verdadeiro : falso`) no JSX para
+decidir qual botão renderizar:
 
----
+- **Se NÃO houver tarefa ativa** (`!state.activeTask`): Exibimos o botão de
+  "Iniciar". Esse botão precisa continuar com o `type='submit'` para disparar o
+  envio do formulário.
+- **Se houver tarefa ativa:** Exibimos o botão de "Interromper".
 
-## 🛠️ 1. A Lógica do `disabled` no React
+**⚠️ Atenção ao detalhe:** O botão de interromper **DEVE** ter o
+`type='button'`. Se você deixar como `submit` (ou não declarar, já que o padrão
+dentro de um form costuma ser submit), ao clicar nele, o navegador tentará
+enviar o formulário novamente, causando um recarregamento indesejado ou bugs na
+aplicação.
 
-No HTML e no React, a propriedade `disabled` em um input controla se ele está
-bloqueado ou não.
-
-- Se passarmos apenas a palavra `disabled` (ou `disabled={true}`), ele bloqueia.
-- Se passarmos `disabled={false}`, ele fica liberado.
-
-Como queremos que isso seja dinâmico, precisamos olhar para o nosso estado
-global:
-
-- Se `state.activeTask` for `null` (nenhuma tarefa rolando) ➡️ `disabled` deve
-  ser `false`.
-- Se `state.activeTask` tiver dados (tarefa rolando) ➡️ `disabled` deve ser
-  `true`.
-
-Para converter um objeto (ou `null`) em um valor Booleano (`true` ou `false`) no
-JavaScript, usamos um truque muito comum: a **dupla exclamação (`!!`)**.
-
-- `!null` vira `true`, e `!!null` volta para `false`.
-- `!{objeto}` vira `false`, e `!!{objeto}` volta para `true`.
+_Dica de Ouro:_ Repare que no código escrevemos `task` e `activeTask` (em
+inglês), mas para o usuário (no `aria-label` e `title`) escrevemos "Interromper
+tarefa atual" (em português). É uma ótima prática manter o código em inglês e a
+interface no idioma do seu público!
 
 ## 💻 2. Aplicando no Código (`MainForm.tsx`)
 
-Vamos adicionar essa propriedade diretamente no nosso componente
-`<DefaultInput />` lá no retorno do JSX no `MainForm`.
+Primeiro, não se esqueça de importar o ícone de "Stop" lá no topo do arquivo
+junto com o ícone de "Play".
+
+```tsx
+// Adicione o StopCircleIcon na importação do lucide-react
+import { PlayCircleIcon, StopCircleIcon } from 'lucide-react';
+```
+
+Agora, vamos substituir a renderização do botão no final do nosso formulário:
 
 **Arquivo:** `src/components/MainForm/index.tsx`
 
 ```tsx
 // ... (resto do código)
 
-<div className='formRow'>
-  <DefaultInput
-    labelText='task'
-    id='meuInput'
-    type='text'
-    placeholder='Digite algo'
-    ref={taskNameInput}
-    // Adicionamos a propriedade disabled aqui!
-    disabled={!!state.activeTask}
-  />
-</div>
-
-// ... (resto do código)
+      <div className='formRow'>
+        {!state.activeTask ? (
+          <DefaultButton
+            aria-label='Iniciar nova tarefa'
+            title='Iniciar nova tarefa'
+            type='submit'
+            icon={<PlayCircleIcon />}
+          />
+        ) : (
+          <DefaultButton
+            aria-label='Interromper tarefa atual'
+            title='Interromper tarefa atual'
+            type='button'
+            color='red'
+            icon={<StopCircleIcon />}
+          />
+        )}
+      </div>
+    </form>
+  );
+}
 ```
 
 ## ✅ 3. Testando o Comportamento
 
-Salve o arquivo e vá para o navegador:
+1. Atualize a página. Você deve ver o botão verde com o ícone de Play (estado
+   inicial sem tarefa).
+2. Digite o nome de uma tarefa e clique em Iniciar (ou aperte Enter).
+3. **Mágica!** O input será bloqueado e o botão verde se transformará
+   instantaneamente em um botão vermelho com o ícone de Stop.
+4. Se você passar o mouse por cima do botão vermelho, verá o tooltip:
+   "Interromper tarefa atual".
 
-1. Atualize a página. O input deve estar liberado, pois não temos nenhuma tarefa
-   ativa.
-2. Digite "Estudar" e envie o formulário (pressionando Enter).
-3. Tente clicar e digitar no input novamente. Ele deve estar bloqueado!
-
-**⚠️ Um pequeno "problema" temporário** Você deve ter notado que agora ficamos
-"presos", não é? Como não temos um botão de parar a tarefa, o input fica
-bloqueado para sempre (ou até você atualizar a página com F5).
+Neste momento, se você clicar no botão vermelho, nada vai acontecer. Por
+enquanto, a única forma de voltar ao botão verde é atualizando a página. Na
+próxima aula, vamos criar exatamente a ação de clique desse botão para parar a
+tarefa e zerar o nosso estado!
