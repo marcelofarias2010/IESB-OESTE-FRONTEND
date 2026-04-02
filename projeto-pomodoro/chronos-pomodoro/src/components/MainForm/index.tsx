@@ -36,7 +36,7 @@ export function MainForm() {
       startDate: Date.now(),
       completeDate: null,
       interruptDate: null,
-      duration: 1,
+      duration: state.config[nextCyleType],
       type: nextCyleType,
     };
 

@@ -1,87 +1,61 @@
-# ⏱️ Duração Dinâmica: Conectando o Tipo de Ciclo às Configurações
+## ⏱️ Ajustando a Duração da Tarefa Baseado no Ciclo
 
-O professor fez uma pausa importante no vídeo para dar um choque de realidade, e
-como uma inteligência artificial que processa código o dia todo, eu reforço:
-**programação é iteração!** Ninguém cria uma arquitetura perfeita de primeira.
-Se os nomes (`workTime`, `shortBreakTime`, etc.) estão batendo perfeitamente
-agora, é porque houve muito planejamento e refatoração antes de gravar a aula.
-Não se sinta mal se o seu código de primeira viagem precisar de ajustes. Isso é
-ser dev! 😉
+Na aula passada, nós conseguimos descobrir qual será o tipo do próximo ciclo
+(trabalho, pausa curta ou pausa longa). Agora, vamos usar essa informação para
+definir a duração exata da tarefa de forma automática.
 
-Agora que já temos o `nextCycleType` (Tempo de Foco, Pausa Curta ou Pausa
-Longa), podemos usar esse exato nome para buscar a duração correspondente lá nas
-configurações (`config`) do nosso estado inicial.
+## 🧠 Como Funciona? (O "Pulo do Gato")
 
----
+Se você reparar no nosso `initialTaskState.ts`, o objeto `config` tem três
+propriedades: `workTime`, `shortBreakTime` e `longBreakTime`. E, curiosamente,
+esses são exatamente os mesmos nomes que a nossa função `getNextCycleType`
+retorna!
 
-## 🔗 1. Configurando a Duração Dinâmica (`MainForm.tsx`)
+Isso não é coincidência, mas sim um planejamento prévio. Dessa forma, podemos
+acessar o tempo correto no nosso objeto de configuração de forma dinâmica,
+usando a notação de colchetes: `state.config[nextCycleType]`.
 
-A mágica acontece porque as chaves do objeto `state.config` têm exatamente os
-mesmos nomes que os tipos de ciclo do nosso `TaskModel`. Com isso, podemos
-acessar o valor dinamicamente usando colchetes: `state.config[nextCycleType]`.
+## 🛠️ Modificando o Código (MainForm)
+
+Vamos aplicar essa pequena mas poderosa alteração na função onde criamos a nova
+tarefa.
 
 **Arquivo:** `src/components/MainForm/index.tsx`
 
-```tsx
-function handleCreateNewTask(event: React.FormEvent<HTMLFormElement>) {
-  // ... validações ...
-
-  const newTask: TaskModel = {
-    id: Date.now().toString(),
-    name: taskName,
-    startDate: new Date(),
-    completeDate: null,
-    interruptDate: null,
-
-    // Substituímos o valor fixo (1) pela busca dinâmica no estado de configurações
-    duration: state.config[nextCycleType],
-
-    type: nextCycleType,
-  };
-
-  // Agora o secondsRemaining será calculado com base na duração correta!
-  const secondsRemaining = newTask.duration * 60;
-
-  // ... setState ...
-}
-```
-
-## ✅ 2. Testando a Duração
-
-Com o nosso console aberto (aquele log dentro do `useEffect`), você pode testar
-o fluxo de tarefas:
-
-1. Primeira Tarefa: O `duration` deve puxar 25 (e o `secondsRemaining` será
-   1500).
-2. Segunda Tarefa (Pausa Curta): O `duration` deve puxar 5.
-3. Oitava Tarefa (Pausa Longa): O `duration` deve puxar 15.
-
-Tudo batendo? Maravilha!
-
-## 🔜 Preparando o Terreno: Formatando os Segundos
-
-Para adiantar, você já pode criar o arquivo utilitário que fará essa matemática.
-Ele pegará o total de segundos e dividirá em minutos e segundos restantes:
-
-**Arquivo:** `src/utils/formatSecondsToMinutes.ts`
+Substitua o valor fixo `1` (que usávamos para testes) pela propriedade
+correspondente no objeto de configuração do estado:
 
 ```tsx
-export function formatSecondsToMinutes(seconds: number) {
-  // Pega a parte inteira dos minutos e garante que tenha 2 dígitos (ex: "05")
-  const minutes = String(Math.floor(seconds / 60)).padStart(2, '0');
+// ... (código anterior)
 
-  // Pega o resto da divisão por 60 (os segundos que sobraram) e garante 2 dígitos
-  const secondsMod = String(Math.floor(seconds % 60)).padStart(2, '0');
+const newTask: TaskModel = {
+  id: Date.now().toString(),
+  name: taskName,
+  startDate: Date.now(),
+  completeDate: null,
+  interruptDate: null,
+  // 🔴 ANTES: duration: 1,
+  // 🟢 AGORA: Pegamos a duração certa baseada no tipo do ciclo!
+  duration: state.config[nextCycleType],
+  type: nextCycleType,
+};
 
-  return `${minutes}:${secondsMod}`;
-}
+// ... (código seguinte)
 ```
 
-E no seu `MainForm.tsx`, você aplicará essa função direto no `setState`:
+## ✅ Testando na Prática
 
-```tsx
-import { formatSecondsToMinutes } from '../../utils/formatSecondsToMinutes';
+Sempre que fizermos alterações que impactem o estado, é bom atualizar a página
+completamente (F5 ou Command+R) para limpar qualquer "sujeira" do hot reload.
 
-// ... dentro da criação da task ...
-        formattedSecondsRemaining: formatSecondsToMinutes(secondsRemaining),
-```
+Agora, se você adicionar tarefas e acompanhar o log (como aquele
+`console.log(state)` no Provider), verá o comportamento esperado:
+
+1. **Primeira tarefa (Ciclo 1)**: Duração será 25.
+2. **Segunda tarefa (Ciclo 2 - Pausa curta)**: Duração será 5.
+3. **Terceira tarefa (Ciclo 3 - Trabalho)**: Duração será 25 novamente.
+
+Tudo funcionando perfeitamente! Como a lógica de determinar o tipo do ciclo já
+estava correta, acessar a duração tornou-se um processo muito mais simples e
+confiável. Na próxima aula, vamos aproveitar esse embalo e configurar o valor
+inicial dos segundos restantes (`secondsRemaining`).
