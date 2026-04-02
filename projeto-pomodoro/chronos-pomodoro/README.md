@@ -1,101 +1,102 @@
-## 🐛 Interrompendo Tarefas e o "Bug do React Confuso"
+# 🛑 Registrando a Interrupção: Editando Arrays no Estado
 
-Sabe aquele momento em que você jura que o código está perfeitamente certo, mas
-ao testar acontece um comportamento bizarro e inexplicável? Foi exatamente o que
-rolou nesta aula!
+Aqui está a instrução detalhada para a aula. Vamos corrigir o pequeno
+esquecimento da aula passada e aprender a técnica definitiva para editar itens
+específicos dentro de um Array no estado do React!
 
-Vamos primeiro criar a lógica para interromper a tarefa e, em seguida, entender
-como resolver o bug do formulário enviando sozinho.
+Na aula passada, focamos tanto em resolver o "bug do React confuso" com os
+botões que acabamos esquecendo de uma regra de negócio muito importante: quando
+interrompemos uma tarefa, precisamos registrar o momento exato em que isso
+aconteceu na propriedade `interruptDate`.
 
-## 🛑 1. Criando a Função `handleInterruptTask`
+Nesta aula, vamos aprender como encontrar e editar uma tarefa específica dentro
+do nosso Array de tarefas (`tasks`), respeitando a regra de ouro do React: a
+**Imutabilidade**.
 
-Quando o usuário clica no botão vermelho de parar, precisamos zerar a tarefa
-ativa e os cronômetros, mas **não** vamos zerar o ciclo (`currentCycle`), pois o
-usuário continua na jornada dele, apenas interrompeu uma etapa.
+---
 
-Lá no seu `MainForm.tsx`, adicione essa função (pode ser logo abaixo do
-`handleCreateNewTask`):
+## 🗺️ O Poder do `.map()` para Editar Arrays
 
-```jsx
+Como já sabemos, não podemos alterar um estado diretamente (nada de
+`array.push()` ou `array[0].campo = valor`).
+
+- Para **adicionar** itens, usamos o Spread Operator:
+  `[...arrayAntigo, novoItem]`.
+- Para **editar** itens, a melhor ferramenta do JavaScript é o `.map()`.
+
+O método `.map()` percorre todo o array original e cria um **novo array** com o
+exato mesmo tamanho. Durante esse percurso, podemos colocar uma condição: _"Se
+for o item que eu quero alterar, eu modifico. Se não for, eu devolvo ele do
+jeito que estava"_.
+
+---
+
+## 💻 Implementando a Lógica (`MainForm.tsx`)
+
+Vamos voltar na nossa função `handleInterruptTask` e adicionar a atualização do
+array `tasks`.
+
+**Arquivo:** `src/components/MainForm/index.tsx`
+
+```tsx
 function handleInterruptTask() {
   setState(prevState => {
     return {
       ...prevState,
-      activeTask: null, // Remove a tarefa ativa
-      secondsRemaining: 0, // Zera os segundos totais
-      formattedSecondsRemaining: '00:00', // Zera o texto do relógio
+      activeTask: null,
+      secondsRemaining: 0,
+      formattedSecondsRemaining: '00:00',
+
+      // 1. Percorremos todas as tarefas antigas para gerar um novo array
+      tasks: prevState.tasks.map(task => {
+        // 2. Verificamos se existe uma tarefa ativa E se o ID bate com a tarefa atual do loop
+        if (prevState.activeTask && prevState.activeTask.id === task.id) {
+          // 3. Se achamos a nossa tarefa alvo, retornamos uma cópia dela (...task)
+          // mas sobrescrevendo o campo interruptDate com a data/hora atual.
+          return { ...task, interruptDate: Date.now() };
+        }
+
+        // 4. Se não for a tarefa alvo, devolvemos ela intacta para o novo array
+        return task;
+      }),
     };
   });
 }
 ```
 
-E, claro, precisamos conectar essa função ao `onClick` do nosso botão vermelho
-de interrupção no JSX.
+🧠 **Entendendo a Condição (TypeScript):** Por que precisamos escrever
+`prevState.activeTask && ...`? Como o nosso tipo diz que `activeTask` pode ser
+`null`, o TypeScript vai chiar se tentarmos ler `.id` direto de algo que pode
+ser nulo. Essa primeira checagem garante para o TypeScript que a tarefa existe
+antes de compararmos os IDs.
 
-## 🤯 2. O Bug: Por que o Formulário Envia Sozinho?
+## ✅ Testando o Comportamento
 
-Se você apenas adicionar o `onClick` e usar o **operador ternário**
-(`condição ? botao1 : botao2`) como fizemos na aula anterior, vai notar um bug
-crítico: ao clicar em "Parar", a tarefa para, mas **imediatamente o formulário é
-enviado de novo**, iniciando a próxima tarefa.
+Para ter certeza de que estamos "acertando o alvo" correto:
 
-**O que está acontecendo por baixo dos panos?** O React tenta ser o mais rápido
-e otimizado possível. Quando usamos um ternário para alternar entre dois
-elementos muito parecidos (dois `<DefaultButton />`), o React entra em um
-processo de Reconciliação.
+1. Abra a página e inicie uma tarefa.
+2. Interrompa a tarefa.
+3. Inicie uma segunda tarefa diferente e a interrompa.
+4. Olhe no seu Console (através daquele `useEffect` espião que criamos no
+   `TaskContextProvider`).
+5. Abra o array `tasks`.
 
-Ele pensa: "_Hum, saiu um botão e entrou outro botão no exato mesmo lugar. Em
-vez de destruir o primeiro no HTML e criar um novo do zero, vou apenas
-reaproveitar o botão antigo e trocar a cor e o ícone_". O problema é que, ao
-fazer essa reciclagem super rápida, ele acaba carregando o comportamento de
-`submit` do botão anterior, disparando o formulário novamente!
+- A tarefa 0 deve ter o seu próprio `interruptDate` preenchido.
+- A tarefa 1 deve ter o seu próprio `interruptDate` preenchido, sem afetar a
+  anterior!
 
-## 🛠️ 3. A Solução: Separando os Componentes
+## 🔮 Preparando o Terreno: O Problema do `useState` Complexo
 
-Existem várias formas de resolver isso (como usar `e.preventDefault()`), mas a
-forma mais robusta e "limpa" para o React entender que são dois botões
-completamente diferentes é:
+Parabéns! Nossa lógica de criação e interrupção está funcionando perfeitamente.
+No entanto, o professor deixou um aviso importantíssimo no final da aula:
 
-1. **Remover o operador ternário** e usar a checagem lógica independente (&&).
-2. **Adicionar uma propriedade** `key` única no botão de interromper, forçando o
-   React a reconhecê-lo como um elemento totalmente novo.
+Olhe para o tamanho dos nossos `setState` na função de criar e na função de
+interromper. Eles estão gigantes! Estamos tendo que copiar o estado inteiro,
+gerenciar arrays complexos e espalhar essa lógica pesada dentro do componente do
+formulário. Se precisássemos iniciar uma tarefa a partir de outro botão em outra
+página, teríamos que duplicar todo esse código.
 
-Vamos atualizar o final do nosso formulário:
-
-**Arquivo:** `src/components/MainForm/index.tsx`
-
-```tsx
-// ... (resto do formulário)
-
-      <div className='formRow'>
-        {/* Renderiza apenas se NÃO houver tarefa ativa */}
-        {!state.activeTask && (
-          <DefaultButton
-            aria-label='Iniciar nova tarefa'
-            title='Iniciar nova tarefa'
-            type='submit'
-            icon={<PlayCircleIcon />}
-          />
-        )}
-
-        {/* Renderiza apenas se HOUVER tarefa ativa */}
-        {!!state.activeTask && (
-          <DefaultButton
-            aria-label='Interromper tarefa atual'
-            title='Interromper tarefa atual'
-            type='button'
-            color='red'
-            icon={<StopCircleIcon />}
-            onClick={handleInterruptTask}
-            key='botao_button' // A chave mágica que evita a confusão do React!
-          />
-        )}
-      </div>
-    </form>
-```
-
-Pronto! Agora o React vai destruir o botão de Submit da tela e criar um botão
-Type Button totalmente novo na DOM, eliminando o comportamento fantasma. Você já
-pode testar criando uma tarefa e a interrompendo: você verá apenas uma
-renderização no seu `console.log` e o input voltará a ficar liberado para
-digitação.
+Para resolver esse problema de estados complexos, o React possui uma ferramenta
+mais avançada. Nas próximas aulas, vamos iniciar uma grande refatoração e migrar
+o nosso motor do `useState` para o poderoso `useReducer`! Preparado para subir
+de nível?
