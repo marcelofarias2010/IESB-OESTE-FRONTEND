@@ -14,11 +14,10 @@ Actions.
 
 ## 🛑 O "Problema" do `enum` e a Solução Inteligente
 
-No vídeo original, pensamos em usar `enum` para definir nossas ações. Porém,
-como você bem notou e corrigiu no seu código, ferramentas modernas de build
-(como Vite/SWC) utilizam a flag `erasableSyntaxOnly`. Isso significa que elas
-esperam que o TypeScript seja apenas uma "camada imaginária" que pode ser
-apagada, deixando apenas o JavaScript puro.
+Pensamos em usar `enum` para definir nossas ações. Porém, ferramentas modernas
+de build (como Vite/SWC) utilizam a flag `erasableSyntaxOnly`. Isso significa
+que elas esperam que o TypeScript seja apenas uma "camada imaginária" que pode
+ser apagada, deixando apenas o JavaScript puro.
 
 O `enum` quebra essa regra, pois ele gera código JavaScript real. A solução
 definitiva, moderna e super recomendada é usar um **Objeto Literal com**
