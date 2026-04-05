@@ -49,3 +49,17 @@ export function TaskContextProvider({ children }: TaskContextProviderProps) {
   );
 }
 ```
+
+**Atenção:** Caso você tenha mudado o nome de algum arquivo de importação (como
+o `initialTaskState` ou o próprio `TaskContext`), dê uma conferida se os
+caminhos estão corretos no seu projeto.
+
+## 🔮 O que vem a seguir?
+
+Com a casa em ordem, nosso componente voltou a funcionar exatamente como antes,
+gerenciando todo o estado pesado das tarefas através do `useState`.
+
+A partir da próxima aula, vamos iniciar a **migração real** do nosso projeto.
+Vamos criar um Reducer muito mais robusto, com tipagens avançadas, ações bem
+definidas e payloads reais para substituir definitivamente esse `useState`
+complexo. Prepare-se!
