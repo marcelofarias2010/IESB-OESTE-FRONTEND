@@ -1,109 +1,189 @@
-## 🚀 Subindo de Nível: Tipagem Avançada para as Actions do Reducer
+## 🚀 O Grande Momento: Migrando de `useState` para `useReducer` na Prática
 
-Agora as coisas vão ficar um pouco mais sérias! Nós já entendemos a base do
-`useReducer`, mas no mundo real do desenvolvimento corporativo com TypeScript,
-nós não queremos deixar margem para erros.
+Chegou a hora de juntar todas as peças! Nós preparamos o terreno, criamos nossas
+Actions super seguras com TypeScript e agora vamos finalmente plugar o
+`useReducer` na nossa aplicação.
 
-O nosso objetivo nesta aula é criar uma estrutura robusta onde seja **impossível
-disparar uma ação incorreta.** Se uma ação exige um payload, o TypeScript vai te
-obrigar a passá-lo. Se ela não exige, ele vai bloquear caso você tente passar.
+O grande benefício que você vai notar aqui é a separação de responsabilidades: o
+componente só avisa o que aconteceu (fazendo o `dispatch`), e o Reducer decide
+como o estado deve ser alterado.
 
-Para manter nosso código organizado, vamos separar as Actions e o Reducer em
-arquivos próprios. Nesta aula, o foco total será na construção das nossas
-Actions.
+Vamos passo a passo!
 
-## 🛑 O "Problema" do `enum` e a Solução Inteligente
+## 🔌 1. Atualizando o Provider e o Contexto
 
-Pensamos em usar `enum` para definir nossas ações. Porém, ferramentas modernas
-de build (como Vite/SWC) utilizam a flag `erasableSyntaxOnly`. Isso significa
-que elas esperam que o TypeScript seja apenas uma "camada imaginária" que pode
-ser apagada, deixando apenas o JavaScript puro.
+Primeiro, vamos ao nosso arquivo principal de estado. Vamos nos despedir do
+`useState` e dar as boas-vindas ao useReducer. Como mudamos a ferramenta, a
+tipagem do nosso contexto também muda de `setState` para `dispatch`.
 
-O `enum` quebra essa regra, pois ele gera código JavaScript real. A solução
-definitiva, moderna e super recomendada é usar um **Objeto Literal com**
-`as const`. Ele te dá a mesma segurança e o mesmo autocomplete do `enum`, mas
-sem quebrar o seu build!
-
-Vamos criar o nosso arquivo de ações e aplicar essa estrutura.
-
-## 🛠️ 1. Criando as Constantes de Ação
-
-Crie um novo arquivo dentro da pasta do seu contexto para guardar as definições
-de ações.
-
-**Arquivo:** `src/contexts/TaskContext/TaskActions.ts`
+**Arquivo:** `src/contexts/TaskContext/TaskContext.ts`
 
 ```tsx
-// useReducer <- hook do React que recebe um reducer e um estado inicial
-// reducer <- função que recebe o estado atual e uma ação, e retorna o novo estado
-// state <- o estado atual
-// action <- a ação disparada, geralmente é um objeto com type e (opcionalmente) payload
+import { createContext, type Dispatch } from 'react';
+import { initialTaskState } from './initialTaskState';
+import type { TaskStateModel } from '../../models/TaskStateModel';
+import type { TaskActionModel } from './taskActions';
 
-import type { TaskModel } from '../../models/TaskModel';
-
-// 1. Usando um objeto literal com 'as const' para travar os valores
-export const TaskActionTypes = {
-  START_TASK: 'START_TASK',
-  INTERRUPT_TASK: 'INTERRUPT_TASK',
-  RESET_STATE: 'RESET_STATE',
-} as const;
-```
-
-## 🔒 2. Amarrando o Type ao Payload (A Mágica do TypeScript)
-
-Aqui está o grande "pulo do gato". Em vez de dizer que toda ação tem um `type` e
-talvez um `payload`, nós vamos criar blocos específicos usando o operador `|`
-(ou).
-
-Nós vamos dizer ao TypeScript:
-
-- "Se o type for `START_TASK` ou `INTERRUPT_TASK`, eu OBRIGATORIAMENTE preciso
-  de um `payload` do tipo `TaskModel`."
-- "Se o type for `RESET_STATE`, eu NÃO POSSO ter um `payload`."
-
-Adicione os tipos abaixo no mesmo arquivo `TaskActions.ts`:
-
-```tsx
-// Ações que OBRIGATORIAMENTE precisam receber dados (payload)
-export type TaskActionsWithPayload =
-  | {
-      type: typeof TaskActionTypes.START_TASK;
-      payload: TaskModel;
-    }
-  | {
-      type: typeof TaskActionTypes.INTERRUPT_TASK;
-      payload: TaskModel;
-    };
-
-// Ações que NÃO DEVEM receber dados extras
-export type TaskActionsWithoutPayload = {
-  type: typeof TaskActionTypes.RESET_STATE;
+type TaskContextProps = {
+  state: TaskStateModel;
+  // Sai o setState, entra o dispatch tipado com as nossas actions!
+  dispatch: Dispatch<TaskActionModel>;
 };
 
-// Juntando tudo no modelo final que será exportado para o nosso Reducer
-export type TaskActionModel =
-  | TaskActionsWithPayload
-  | TaskActionsWithoutPayload;
+const initialContextValue = {
+  state: initialTaskState,
+  dispatch: () => {},
+};
+
+export const TaskContext = createContext<TaskContextProps>(initialContextValue);
 ```
 
-## 🎯 3. Por que isso é incrível? (O Resultado Prático)
+**Arquivo:** `src/contexts/TaskContext/TaskContextProvider.tsx`
 
-Pode parecer que escrevemos código demais, mas veja o que ganhamos com isso na
-hora de usar o `dispatch` (ou dentro do próprio arquivo do Reducer):
+```tsx
+import { useEffect, useReducer } from 'react';
+import { initialTaskState } from './initialTaskState';
+import { taskReducer } from './taskReducer';
+import { TaskContext } from './TaskContext';
 
-- **Sem erros de digitação:** Você não vai mais escrever `'START_TSK'` sem
-  querer, pois agora usará TaskActionTypes.START_TASK.
-- **Trava de Payload:** Se você tentar fazer
-  `dispatch({ type: TaskActionTypes.START_TASK })`, o seu editor de código vai
-  gritar um erro vermelho: "_Ei, está faltando o payload do tipo TaskModel!_"
-- **Segurança no Switch Case:** Quando criarmos o nosso Reducer (na próxima
-  aula), se você estiver dentro do case `TaskActionTypes.RESET_STATE`, e tentar
-  acessar action.payload, o TypeScript não vai deixar, pois ele sabe que o Reset
-  não tem payload.
+type TaskContextProviderProps = {
+  children: React.ReactNode;
+};
 
-Esse é o poder do TypeScript avançado. Você perde um tempinho configurando os
-tipos, mas ganha horas de produtividade não tendo que caçar bugs bobos na sua
-aplicação.
+export function TaskContextProvider({ children }: TaskContextProviderProps) {
+  // A mágica acontece aqui: usamos o reducer que vamos criar a seguir
+  const [state, dispatch] = useReducer(taskReducer, initialTaskState);
 
-Na próxima aula, vamos pegar esse modelo maravilhoso de Actions que acabamos de
-criar e injetar dentro do nosso novo `TaskReducer`!
+  useEffect(() => {
+    console.log(state);
+  }, [state]);
+
+  return (
+    <TaskContext.Provider value={{ state, dispatch }}>
+      {children}
+    </TaskContext.Provider>
+  );
+}
+```
+
+## 🧠 2. Centralizando a Lógica no Reducer
+
+Antes, a lógica de calcular o próximo ciclo, converter segundos e criar as
+tarefas ficava poluindo o nosso formulário. Agora, toda essa inteligência mora
+dentro do `taskReducer`.
+
+O Reducer recebe a ação (`START_TASK` ou `INTERRUPT_TASK`) e aplica a mudança no
+estado de forma pura.
+
+**Arquivo:** `src/contexts/TaskContext/taskReducer.ts`
+
+```tsx
+import type { TaskStateModel } from '../../models/TaskStateModel';
+import { formatSecondsToMinutes } from '../../utils/formatSecondsToMinutes';
+import { getNextCycle } from '../../utils/getNextCycle';
+import { TaskActionTypes, type TaskActionModel } from './taskActions';
+
+export function taskReducer(
+  state: TaskStateModel,
+  action: TaskActionModel,
+): TaskStateModel {
+  switch (action.type) {
+    case TaskActionTypes.START_TASK: {
+      const newTask = action.payload; // O TS sabe que existe payload aqui!
+      const nextCycle = getNextCycle(state.currentCycle);
+      const secondsRemaining = newTask.duration * 60;
+
+      return {
+        ...state,
+        activeTask: newTask,
+        currentCycle: nextCycle,
+        secondsRemaining,
+        formattedSecondsRemaining: formatSecondsToMinutes(secondsRemaining),
+        tasks: [...state.tasks, newTask],
+      };
+    }
+    case TaskActionTypes.INTERRUPT_TASK: {
+      return {
+        ...state,
+        activeTask: null,
+        secondsRemaining: 0,
+        formattedSecondsRemaining: '00:00',
+        tasks: state.tasks.map(task => {
+          // Marca a data de interrupção na tarefa ativa
+          if (state.activeTask && state.activeTask.id === task.id) {
+            return { ...task, interruptDate: Date.now() };
+          }
+          return task;
+        }),
+      };
+    }
+    case TaskActionTypes.RESET_STATE: {
+      return state;
+    }
+  }
+
+  return state;
+}
+```
+
+## 🧹 3. Limpando o Componente (MainForm)
+
+Agora que o Reducer faz o trabalho pesado, olha como o nosso componente fica
+mais limpo! Ele apenas coleta os dados do input, monta o objeto `newTask` e
+despacha (`dispatch`) a ação para o contexto.
+
+**Arquivo:** `src/components/MainForm/index.tsx `(trechos principais)
+
+```tsx
+// ... imports omitidos
+
+export function MainForm() {
+  const { state, dispatch } = useTaskContext();
+  const taskNameInput = useRef<HTMLInputElement>(null);
+
+  // ... lógica de getNextCycleType omitida
+
+  function handleCreateNewTask(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (taskNameInput.current === null) return;
+
+    const taskName = taskNameInput.current.value.trim();
+    if (!taskName) {
+      alert('Digite o nome da tarefa');
+      return;
+    }
+
+    const newTask: TaskModel = {
+      id: Date.now().toString(),
+      name: taskName,
+      startDate: Date.now(),
+      completeDate: null,
+      interruptDate: null,
+      duration: 1, // Vamos arrumar isso em breve!
+      type: nextCyleType,
+    };
+
+    // Disparamos a ação com o payload!
+    dispatch({ type: TaskActionTypes.START_TASK, payload: newTask });
+  }
+
+  function handleInterruptTask() {
+    // Disparamos a ação sem payload!
+    dispatch({ type: TaskActionTypes.INTERRUPT_TASK });
+  }
+
+  // ... return do JSX omitido
+```
+
+## 💡 Dica Pro: Funções Helper para o Dispatch
+
+Se o seu `dispatch` ficar muito repetitivo ou complexo ao longo do projeto, um
+padrão muito comum no mercado é criar funções separadas (Action Creators) que
+retornam o objeto do `dispatch`. Mas, para o tamanho da nossa aplicação atual,
+chamar o dispatch diretamente no componente é a abordagem mais direta e
+recomendada para não adicionarmos complexidade desnecessária.
+
+**✅ Teste Final** Atualize a página e teste a criação e interrupção de tarefas.
+Tudo deve estar funcionando perfeitamente, exatamente como antes, mas agora
+rodando em cima de uma arquitetura super robusta, tipada e escalável com
+`useReducer`!
