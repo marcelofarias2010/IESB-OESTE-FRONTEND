@@ -10,7 +10,7 @@ Na prática anterior, cada início de tarefa podia gerar **outro** worker; agora
 
 - O Pomodoro precisa de **no máximo um** timer em background coerente com o estado global.
 - Quando `secondsRemaining` chegar a zero, quem reage pode estar **fora** do `MainForm` (ex.: outra rota). Todos precisam falar com o **mesmo** worker, não com um criado “só naquele clique”.
-- O Singleton **não é específico de React**: é um padrão de projeto usado em várias linguagens. Se quiser se aprofundar, a aula citou a playlist **Padrões de Projeto** do **Otávio Miranda** no YouTube (começando por *Singleton* — teoria e prática).
+- O Singleton **não é específico de React**: é um padrão de projeto usado em várias linguagens. 
 
 ## Pré-requisitos
 
