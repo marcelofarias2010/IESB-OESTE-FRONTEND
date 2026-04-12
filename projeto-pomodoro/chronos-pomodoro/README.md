@@ -1,153 +1,91 @@
-# Tarefa: mensagens contextuais e componente `Tips`
+# Tarefa: Web Worker de teste (`timerWorker`) e comunicação com o `MainForm`
 
 ## Objetivo
 
-Mostrar **duas mensagens diferentes** conforme o usuário está **com ciclo rodando** (botão de parar visível) ou **sem ciclo ativo** (só o botão de iniciar):
+Introduzir um **Web Worker** no projeto para rodar lógica em um **thread separado** da interface. Nesta etapa o foco é **aprender o protocolo de mensagens** (`postMessage` / `onmessage`) com comandos fictícios. O cronômetro real do Pomodoro virá depois, reaproveitando a mesma ideia.
 
-| Situação | Tom da mensagem | De onde vem o tipo (`workTime` / `shortBreakTime` / `longBreakTime`) |
-|----------|-----------------|----------------------------------------------------------------------|
-| **Ciclo ativo** (`state.activeTask` existe) | **Presente** — o que fazer *agora* | `state.activeTask.type` (o tipo da tarefa que está em andamento) |
-| **Ciclo não ativo** (`state.activeTask` é `null`) | **Futuro** — o que vai acontecer *quando clicar em iniciar* | `getNextCycleType(getNextCycle(state.currentCycle))` (próximo ciclo da sequência) |
+## O que você vai entender ao final
 
-Assim o texto não mistura “próximo ciclo” enquanto o contador já está rodando, evitando confusão.
-
-Em cada situação existem **três variantes** de texto (uma para foco, uma para pausa curta, uma para pausa longa). Em vez de vários `if/else`, usamos **dois objetos** que mapeiam cada tipo para um pedaço de JSX.
-
-Por fim, essa lógica sai do `MainForm` e vai para o componente **`Tips`**, deixando o formulário mais enxuto.
+- Por que usar `new URL('...', import.meta.url)` no Vite para referenciar o arquivo do worker.
+- Como a **thread principal** envia dados ao worker e como o worker **responde**.
+- Onde ver no DevTools as mensagens do worker (`console.log` no worker aparece na aba do worker, não misturado com o da página).
 
 ## Pré-requisitos
 
-- `useReducer`, `TaskContext` e `MainForm` funcionando (iniciar / interromper tarefa).
-- Funções utilitárias `getNextCycle` e `getNextCycleType` já presentes em `src/utils/`.
+- `MainForm` disparando `START_TASK` ao enviar o formulário.
+- Navegador com suporte a Web Workers (Chrome/Firefox/Edge atuais).
 
-## Passo 1 — Duração da tarefa alinhada ao `config`
+## Passo 1 — Criar o arquivo do worker
 
-Hoje a tarefa pode estar com `duration` fixo (ex.: `1`). O tempo da sessão deve bater com **`state.config`**, usando o **tipo do próximo ciclo** (`nextCyleType`), o mesmo já usado em `type` da nova tarefa.
+Crie a pasta `src/workers/` (se ainda não existir) e o arquivo `src/workers/timerWorker.js` com o conteúdo abaixo.
 
-No arquivo `src/components/MainForm/index.tsx`, dentro de `handleCreateNewTask`, defina `duration` assim:
+O worker **escuta** mensagens da thread principal, faz um `switch` no texto recebido e **devolve** uma string. No caso `FECHAR`, ele ainda manda uma resposta e encerra o worker com `self.close()`.
 
-```ts
-const newTask: TaskModel = {
-  id: Date.now().toString(),
-  name: taskName,
-  startDate: Date.now(),
-  completeDate: null,
-  interruptDate: null,
-  duration: state.config[nextCyleType],
-  type: nextCyleType,
+```javascript
+self.onmessage = function (event) {
+  console.log('WORKER recebeu:', event.data);
+
+  switch (event.data) {
+    case 'FAVOR': {
+      self.postMessage('Sim, posso fazer um favor');
+      break;
+    }
+    case 'FALA_OI': {
+      self.postMessage('OK: OI!');
+      break;
+    }
+    case 'FECHAR': {
+      self.postMessage('Tá bom, vou fechar');
+      self.close();
+      break;
+    }
+    default:
+      self.postMessage('Não entendi');
+  }
 };
 ```
 
-`nextCyleType` deve ser calculado **antes** (como já é feito no formulário):
+## Passo 2 — Instanciar o worker ao iniciar uma tarefa
 
-```ts
-const nextCycle = getNextCycle(state.currentCycle);
-const nextCyleType = getNextCycleType(nextCycle);
+No arquivo `src/components/MainForm/index.tsx`, **logo após** o `dispatch` que inicia a tarefa (`TaskActionTypes.START_TASK`), adicione o bloco abaixo **dentro** da função `handleCreateNewTask`.
+
+- `new URL('../../workers/timerWorker.js', import.meta.url)` informa ao **Vite** o caminho correto do arquivo em tempo de build.
+- Várias chamadas a `postMessage` servem para **testar** cada ramo do `switch` no worker.
+- `worker.onmessage` na thread principal **recebe** as respostas e imprime no console.
+
+```typescript
+dispatch({ type: TaskActionTypes.START_TASK, payload: newTask });
+
+const worker = new Worker(
+  new URL('../../workers/timerWorker.js', import.meta.url),
+);
+
+worker.postMessage('FAVOR'); // Sim, posso fazer um favor
+worker.postMessage('FALA_OI'); // OK: OI!
+worker.postMessage('BLALBLA'); // Não entendi!
+worker.postMessage('FECHAR'); // Tá bom, vou fechar
+
+worker.onmessage = function (event) {
+  console.log('PRINCIPAL recebeu:', event.data);
+};
 ```
 
-## Passo 2 — Criar o componente `Tips`
+**Importante:** nesta versão didática, **cada vez** que você inicia uma tarefa um **novo** worker é criado. Para o Pomodoro de verdade, o próximo passo será decidir **uma** instância, mandar **segundos restantes** e tratar **parar / limpar** sem vazar workers. Por ora, o objetivo é só validar a comunicação.
 
-Crie a pasta `src/components/Tips/` e o arquivo `index.tsx` com o conteúdo abaixo.
+## Passo 3 — Validar no navegador
 
-Ideia central:
+1. Abra o app, abra o **DevTools** (F12) → aba **Console**.
+2. Inicie uma tarefa (envie o formulário).
+3. Você deve ver linhas como `PRINCIPAL recebeu:` com as respostas esperadas, na ordem dos `postMessage`.
+4. Opcional: no Chrome, em **Console**, use o filtro ou o menu de contexto para inspecionar o **worker** e ver os logs `WORKER recebeu:`.
 
-- `tipsForWhenActiveTask`: mensagens de **presente**, indexadas por `state.activeTask.type`.
-- `tipsForNoActiveTask`: mensagens de **futuro**, indexadas por `nextCyleType` (próximo ciclo antes de clicar em iniciar).
+## Checklist
 
-```tsx
-import { useTaskContext } from '../../contexts/TaskContext';
-import { getNextCycle } from '../../utils/getNextCycle';
-import { getNextCycleType } from '../../utils/getNextCycleType';
+- [ ] Arquivo `src/workers/timerWorker.js` criado com o `switch` completo.
+- [ ] `MainForm` instancia o worker com `new URL(..., import.meta.url)` após o `dispatch` de `START_TASK`.
+- [ ] Quatro testes de `postMessage` e handler `onmessage` na thread principal.
+- [ ] Console mostra as respostas ao iniciar uma tarefa.
 
-export function Tips() {
-  const { state } = useTaskContext();
-  const nextCycle = getNextCycle(state.currentCycle);
-  const nextCyleType = getNextCycleType(nextCycle);
+## Próximos passos (fora desta tarefa)
 
-  const tipsForWhenActiveTask = {
-    workTime: <span>Foque por {state.config.workTime}min</span>,
-    shortBreakTime: <span>Descanse por {state.config.shortBreakTime}min</span>,
-    longBreakTime: <span>Descanso longo</span>,
-  };
-
-  const tipsForNoActiveTask = {
-    workTime: (
-      <span>
-        Próximo ciclo é de <b>{state.config.workTime}min</b>
-      </span>
-    ),
-    shortBreakTime: (
-      <span>Próximo descanso é de {state.config.shortBreakTime}min</span>
-    ),
-    longBreakTime: <span>Próximo descanso será longo</span>,
-  };
-
-  return (
-    <>
-      {!!state.activeTask && tipsForWhenActiveTask[state.activeTask.type]}
-      {!state.activeTask && tipsForNoActiveTask[nextCyleType]}
-    </>
-  );
-}
-```
-
-**Observação:** `!!state.activeTask` força um booleano explícito; `!state.activeTask` cobre o caso “sem tarefa ativa”.
-
-## Passo 3 — Usar `Tips` no `MainForm`
-
-Importe e renderize o componente em uma linha do formulário (por exemplo, abaixo do campo de nome). O `MainForm` continua precisando de `getNextCycle` / `getNextCycleType` **apenas** para montar a `newTask` no submit, não para as dicas.
-
-Trecho esperado do `src/components/MainForm/index.tsx`:
-
-```tsx
-import { Tips } from '../Tips';
-
-// ... dentro do return do form:
-<div className='formRow'>
-  <Tips />
-</div>
-```
-
-Exemplo de `handleCreateNewTask` completo coerente com esta tarefa:
-
-```tsx
-function handleCreateNewTask(event: React.FormEvent<HTMLFormElement>) {
-  event.preventDefault();
-
-  if (taskNameInput.current === null) return;
-
-  const taskName = taskNameInput.current.value.trim();
-
-  if (!taskName) {
-    alert('Digite o nome da tarefa');
-    return;
-  }
-
-  const nextCycle = getNextCycle(state.currentCycle);
-  const nextCyleType = getNextCycleType(nextCycle);
-
-  const newTask: TaskModel = {
-    id: Date.now().toString(),
-    name: taskName,
-    startDate: Date.now(),
-    completeDate: null,
-    interruptDate: null,
-    duration: state.config[nextCyleType],
-    type: nextCyleType,
-  };
-
-  dispatch({ type: TaskActionTypes.START_TASK, payload: newTask });
-}
-```
-
-## Como validar
-
-1. Sem tarefa ativa: a mensagem fala do **próximo** ciclo (foco / pausa curta / pausa longa) e os minutos batem com `state.config`.
-2. Após clicar em iniciar: a mensagem fala do **agora** (ex.: “Foque por …”) e não usa “próximo ciclo”.
-3. Após interromper: volta ao modo “futuro”.
-4. Textos curtos o suficiente para não quebrar feio em viewports estreitas (teste no DevTools, ~360px de largura).
-
-## Opcional (avançado)
-
-- Passar `nextCyleType` para `Tips` via **props** em vez de recalcular dentro do componente (mesmo resultado, acoplamento diferente).
-- Unificar textos muito parecidos com um único modelo de frase e só trocar números/rótulos, se quiser menos repetição.
+Substituir os comandos de brincadeira por mensagens tipadas (ex.: `{ type: 'TICK', secondsLeft: n }`), sincronizar com o estado do `useReducer` e encerrar o worker ao interromper a tarefa.
