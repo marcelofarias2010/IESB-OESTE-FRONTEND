@@ -1,189 +1,153 @@
-## 🚀 O Grande Momento: Migrando de `useState` para `useReducer` na Prática
+# Tarefa: mensagens contextuais e componente `Tips`
 
-Chegou a hora de juntar todas as peças! Nós preparamos o terreno, criamos nossas
-Actions super seguras com TypeScript e agora vamos finalmente plugar o
-`useReducer` na nossa aplicação.
+## Objetivo
 
-O grande benefício que você vai notar aqui é a separação de responsabilidades: o
-componente só avisa o que aconteceu (fazendo o `dispatch`), e o Reducer decide
-como o estado deve ser alterado.
+Mostrar **duas mensagens diferentes** conforme o usuário está **com ciclo rodando** (botão de parar visível) ou **sem ciclo ativo** (só o botão de iniciar):
 
-Vamos passo a passo!
+| Situação | Tom da mensagem | De onde vem o tipo (`workTime` / `shortBreakTime` / `longBreakTime`) |
+|----------|-----------------|----------------------------------------------------------------------|
+| **Ciclo ativo** (`state.activeTask` existe) | **Presente** — o que fazer *agora* | `state.activeTask.type` (o tipo da tarefa que está em andamento) |
+| **Ciclo não ativo** (`state.activeTask` é `null`) | **Futuro** — o que vai acontecer *quando clicar em iniciar* | `getNextCycleType(getNextCycle(state.currentCycle))` (próximo ciclo da sequência) |
 
-## 🔌 1. Atualizando o Provider e o Contexto
+Assim o texto não mistura “próximo ciclo” enquanto o contador já está rodando, evitando confusão.
 
-Primeiro, vamos ao nosso arquivo principal de estado. Vamos nos despedir do
-`useState` e dar as boas-vindas ao useReducer. Como mudamos a ferramenta, a
-tipagem do nosso contexto também muda de `setState` para `dispatch`.
+Em cada situação existem **três variantes** de texto (uma para foco, uma para pausa curta, uma para pausa longa). Em vez de vários `if/else`, usamos **dois objetos** que mapeiam cada tipo para um pedaço de JSX.
 
-**Arquivo:** `src/contexts/TaskContext/TaskContext.ts`
+Por fim, essa lógica sai do `MainForm` e vai para o componente **`Tips`**, deixando o formulário mais enxuto.
 
-```tsx
-import { createContext, type Dispatch } from 'react';
-import { initialTaskState } from './initialTaskState';
-import type { TaskStateModel } from '../../models/TaskStateModel';
-import type { TaskActionModel } from './taskActions';
+## Pré-requisitos
 
-type TaskContextProps = {
-  state: TaskStateModel;
-  // Sai o setState, entra o dispatch tipado com as nossas actions!
-  dispatch: Dispatch<TaskActionModel>;
+- `useReducer`, `TaskContext` e `MainForm` funcionando (iniciar / interromper tarefa).
+- Funções utilitárias `getNextCycle` e `getNextCycleType` já presentes em `src/utils/`.
+
+## Passo 1 — Duração da tarefa alinhada ao `config`
+
+Hoje a tarefa pode estar com `duration` fixo (ex.: `1`). O tempo da sessão deve bater com **`state.config`**, usando o **tipo do próximo ciclo** (`nextCyleType`), o mesmo já usado em `type` da nova tarefa.
+
+No arquivo `src/components/MainForm/index.tsx`, dentro de `handleCreateNewTask`, defina `duration` assim:
+
+```ts
+const newTask: TaskModel = {
+  id: Date.now().toString(),
+  name: taskName,
+  startDate: Date.now(),
+  completeDate: null,
+  interruptDate: null,
+  duration: state.config[nextCyleType],
+  type: nextCyleType,
 };
-
-const initialContextValue = {
-  state: initialTaskState,
-  dispatch: () => {},
-};
-
-export const TaskContext = createContext<TaskContextProps>(initialContextValue);
 ```
 
-**Arquivo:** `src/contexts/TaskContext/TaskContextProvider.tsx`
+`nextCyleType` deve ser calculado **antes** (como já é feito no formulário):
+
+```ts
+const nextCycle = getNextCycle(state.currentCycle);
+const nextCyleType = getNextCycleType(nextCycle);
+```
+
+## Passo 2 — Criar o componente `Tips`
+
+Crie a pasta `src/components/Tips/` e o arquivo `index.tsx` com o conteúdo abaixo.
+
+Ideia central:
+
+- `tipsForWhenActiveTask`: mensagens de **presente**, indexadas por `state.activeTask.type`.
+- `tipsForNoActiveTask`: mensagens de **futuro**, indexadas por `nextCyleType` (próximo ciclo antes de clicar em iniciar).
 
 ```tsx
-import { useEffect, useReducer } from 'react';
-import { initialTaskState } from './initialTaskState';
-import { taskReducer } from './taskReducer';
-import { TaskContext } from './TaskContext';
+import { useTaskContext } from '../../contexts/TaskContext';
+import { getNextCycle } from '../../utils/getNextCycle';
+import { getNextCycleType } from '../../utils/getNextCycleType';
 
-type TaskContextProviderProps = {
-  children: React.ReactNode;
-};
+export function Tips() {
+  const { state } = useTaskContext();
+  const nextCycle = getNextCycle(state.currentCycle);
+  const nextCyleType = getNextCycleType(nextCycle);
 
-export function TaskContextProvider({ children }: TaskContextProviderProps) {
-  // A mágica acontece aqui: usamos o reducer que vamos criar a seguir
-  const [state, dispatch] = useReducer(taskReducer, initialTaskState);
+  const tipsForWhenActiveTask = {
+    workTime: <span>Foque por {state.config.workTime}min</span>,
+    shortBreakTime: <span>Descanse por {state.config.shortBreakTime}min</span>,
+    longBreakTime: <span>Descanso longo</span>,
+  };
 
-  useEffect(() => {
-    console.log(state);
-  }, [state]);
+  const tipsForNoActiveTask = {
+    workTime: (
+      <span>
+        Próximo ciclo é de <b>{state.config.workTime}min</b>
+      </span>
+    ),
+    shortBreakTime: (
+      <span>Próximo descanso é de {state.config.shortBreakTime}min</span>
+    ),
+    longBreakTime: <span>Próximo descanso será longo</span>,
+  };
 
   return (
-    <TaskContext.Provider value={{ state, dispatch }}>
-      {children}
-    </TaskContext.Provider>
+    <>
+      {!!state.activeTask && tipsForWhenActiveTask[state.activeTask.type]}
+      {!state.activeTask && tipsForNoActiveTask[nextCyleType]}
+    </>
   );
 }
 ```
 
-## 🧠 2. Centralizando a Lógica no Reducer
+**Observação:** `!!state.activeTask` força um booleano explícito; `!state.activeTask` cobre o caso “sem tarefa ativa”.
 
-Antes, a lógica de calcular o próximo ciclo, converter segundos e criar as
-tarefas ficava poluindo o nosso formulário. Agora, toda essa inteligência mora
-dentro do `taskReducer`.
+## Passo 3 — Usar `Tips` no `MainForm`
 
-O Reducer recebe a ação (`START_TASK` ou `INTERRUPT_TASK`) e aplica a mudança no
-estado de forma pura.
+Importe e renderize o componente em uma linha do formulário (por exemplo, abaixo do campo de nome). O `MainForm` continua precisando de `getNextCycle` / `getNextCycleType` **apenas** para montar a `newTask` no submit, não para as dicas.
 
-**Arquivo:** `src/contexts/TaskContext/taskReducer.ts`
+Trecho esperado do `src/components/MainForm/index.tsx`:
 
 ```tsx
-import type { TaskStateModel } from '../../models/TaskStateModel';
-import { formatSecondsToMinutes } from '../../utils/formatSecondsToMinutes';
-import { getNextCycle } from '../../utils/getNextCycle';
-import { TaskActionTypes, type TaskActionModel } from './taskActions';
+import { Tips } from '../Tips';
 
-export function taskReducer(
-  state: TaskStateModel,
-  action: TaskActionModel,
-): TaskStateModel {
-  switch (action.type) {
-    case TaskActionTypes.START_TASK: {
-      const newTask = action.payload; // O TS sabe que existe payload aqui!
-      const nextCycle = getNextCycle(state.currentCycle);
-      const secondsRemaining = newTask.duration * 60;
+// ... dentro do return do form:
+<div className='formRow'>
+  <Tips />
+</div>
+```
 
-      return {
-        ...state,
-        activeTask: newTask,
-        currentCycle: nextCycle,
-        secondsRemaining,
-        formattedSecondsRemaining: formatSecondsToMinutes(secondsRemaining),
-        tasks: [...state.tasks, newTask],
-      };
-    }
-    case TaskActionTypes.INTERRUPT_TASK: {
-      return {
-        ...state,
-        activeTask: null,
-        secondsRemaining: 0,
-        formattedSecondsRemaining: '00:00',
-        tasks: state.tasks.map(task => {
-          // Marca a data de interrupção na tarefa ativa
-          if (state.activeTask && state.activeTask.id === task.id) {
-            return { ...task, interruptDate: Date.now() };
-          }
-          return task;
-        }),
-      };
-    }
-    case TaskActionTypes.RESET_STATE: {
-      return state;
-    }
+Exemplo de `handleCreateNewTask` completo coerente com esta tarefa:
+
+```tsx
+function handleCreateNewTask(event: React.FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+
+  if (taskNameInput.current === null) return;
+
+  const taskName = taskNameInput.current.value.trim();
+
+  if (!taskName) {
+    alert('Digite o nome da tarefa');
+    return;
   }
 
-  return state;
+  const nextCycle = getNextCycle(state.currentCycle);
+  const nextCyleType = getNextCycleType(nextCycle);
+
+  const newTask: TaskModel = {
+    id: Date.now().toString(),
+    name: taskName,
+    startDate: Date.now(),
+    completeDate: null,
+    interruptDate: null,
+    duration: state.config[nextCyleType],
+    type: nextCyleType,
+  };
+
+  dispatch({ type: TaskActionTypes.START_TASK, payload: newTask });
 }
 ```
 
-## 🧹 3. Limpando o Componente (MainForm)
+## Como validar
 
-Agora que o Reducer faz o trabalho pesado, olha como o nosso componente fica
-mais limpo! Ele apenas coleta os dados do input, monta o objeto `newTask` e
-despacha (`dispatch`) a ação para o contexto.
+1. Sem tarefa ativa: a mensagem fala do **próximo** ciclo (foco / pausa curta / pausa longa) e os minutos batem com `state.config`.
+2. Após clicar em iniciar: a mensagem fala do **agora** (ex.: “Foque por …”) e não usa “próximo ciclo”.
+3. Após interromper: volta ao modo “futuro”.
+4. Textos curtos o suficiente para não quebrar feio em viewports estreitas (teste no DevTools, ~360px de largura).
 
-**Arquivo:** `src/components/MainForm/index.tsx `(trechos principais)
+## Opcional (avançado)
 
-```tsx
-// ... imports omitidos
-
-export function MainForm() {
-  const { state, dispatch } = useTaskContext();
-  const taskNameInput = useRef<HTMLInputElement>(null);
-
-  // ... lógica de getNextCycleType omitida
-
-  function handleCreateNewTask(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (taskNameInput.current === null) return;
-
-    const taskName = taskNameInput.current.value.trim();
-    if (!taskName) {
-      alert('Digite o nome da tarefa');
-      return;
-    }
-
-    const newTask: TaskModel = {
-      id: Date.now().toString(),
-      name: taskName,
-      startDate: Date.now(),
-      completeDate: null,
-      interruptDate: null,
-      duration: 1, // Vamos arrumar isso em breve!
-      type: nextCyleType,
-    };
-
-    // Disparamos a ação com o payload!
-    dispatch({ type: TaskActionTypes.START_TASK, payload: newTask });
-  }
-
-  function handleInterruptTask() {
-    // Disparamos a ação sem payload!
-    dispatch({ type: TaskActionTypes.INTERRUPT_TASK });
-  }
-
-  // ... return do JSX omitido
-```
-
-## 💡 Dica Pro: Funções Helper para o Dispatch
-
-Se o seu `dispatch` ficar muito repetitivo ou complexo ao longo do projeto, um
-padrão muito comum no mercado é criar funções separadas (Action Creators) que
-retornam o objeto do `dispatch`. Mas, para o tamanho da nossa aplicação atual,
-chamar o dispatch diretamente no componente é a abordagem mais direta e
-recomendada para não adicionarmos complexidade desnecessária.
-
-**✅ Teste Final** Atualize a página e teste a criação e interrupção de tarefas.
-Tudo deve estar funcionando perfeitamente, exatamente como antes, mas agora
-rodando em cima de uma arquitetura super robusta, tipada e escalável com
-`useReducer`!
+- Passar `nextCyleType` para `Tips` via **props** em vez de recalcular dentro do componente (mesmo resultado, acoplamento diferente).
+- Unificar textos muito parecidos com um único modelo de frase e só trocar números/rótulos, se quiser menos repetição.
