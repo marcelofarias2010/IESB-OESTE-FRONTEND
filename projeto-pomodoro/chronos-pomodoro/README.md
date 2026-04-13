@@ -1,164 +1,141 @@
-# Tarefa: worker útil — `useEffect` no Provider, countdown com `setTimeout` recursivo
+# Tarefa: contador na UI — ações `COUNT_DOWN` e `COMPLETE_TASK`
 
 ## Objetivo
 
-Fazer o **timer rodar de verdade** no Web Worker: o **`TaskContextProvider`** envia o **estado** (`state`) ao worker quando há tarefa ativa; o worker calcula o **fim** da sessão, dispara **ticks** a cada segundo (com **`setTimeout` recursivo**, não `setInterval`) e manda os **segundos restantes** de volta. Sem tarefa ativa, o worker é **encerrado** com `terminate()`.
+Fazer o **countdown visível** na aplicação: a cada tick o worker manda os **segundos restantes**; o **Provider** dá **`dispatch`** para atualizar `secondsRemaining` e `formattedSecondsRemaining`. Quando o valor chega em **0 ou menos**, **não** se dispara mais `COUNT_DOWN` — só **`COMPLETE_TASK`**, que zera o estado ativo, marca **`completeDate`** na tarefa e encerra o worker, igual ao fluxo de “timer acabou”.
 
-Na próxima iteração do curso você ligará isso ao **`dispatch`** de “task completa” e ao **countdown na UI**; aqui o foco é o **fluxo Provider ↔ Worker** e o **cuidado com `useEffect`**.
+## Contexto da aula
 
-## Ideias da aula (resumo)
+- **`postMessage` no `TimerWorkerManager`:** tipar como `TaskStateModel` (o estado completo que já vai para o worker).
+- **`COUNT_DOWN`:** precisa de **payload** com os segundos (ex.: `{ secondsRemaining: number }`). Dá para amarrar ao tipo do estado com `Pick<TaskStateModel, 'secondsRemaining'>`, mas um tipo explícito com uma propriedade `secondsRemaining: number` é equivalente e simples.
+- **`COMPLETE_TASK`:** **sem payload**, como `INTERRUPT_TASK` — quem manda é o estado atual (`activeTask` no reducer).
+- **Um `dispatch` por mensagem:** se no `onmessage` você disparar `COUNT_DOWN` com `0` **e** depois `COMPLETE_TASK`, ou dois dispatches que brigam, pode aparecer **bug estranho** (contador “piscando”, valores negativos no estado). A regra: **`countDownSeconds > 0`** → só `COUNT_DOWN`; **`<= 0`** → só `COMPLETE_TASK` + `terminate()`.
 
-| Onde | O que acontece |
-|------|----------------|
-| **Provider** | `TimerWorkerManager.getInstance()`, `useEffect` reage a **`state`**: sem `activeTask` → `terminate()` + log; com `activeTask` → `postMessage(state)`. |
-| **Worker** | Recebe `state`, calcula `endDate = startDate + secondsRemaining * 1000`, função **`tick`** recursiva com `setTimeout(..., 1000)`. |
-| **Por que não `setInterval`?** | Em abas em segundo plano o navegador pode **atrasar** `setInterval`; o roteiro da aula prefere **`setTimeout` recursivo** e conta baseada em **`Date.now()`**. |
-| **`Math.ceil` / `Math.floor`** | Na **primeira** leitura usa-se `ceil` para começar em “60” (ou 60×1 min em teste); nos ticks seguintes, `floor` com o tempo atual. |
-| **`isRunning` no worker** | Evita processar **outra** mensagem enquanto um ciclo de timer já está rodando (proteção extra além do Singleton). |
+## Passo 1 — `taskActions.ts`
 
-## Aviso sobre `useEffect` e dependências
-
-- Tudo que a função do `useEffect` **lê** e que pode mudar entre execuções costuma ir no **array de dependências** (ex.: `state`, referência estável ao manager).
-- Se você colocar no array algo que **o próprio efeito altera** de forma que dispare de novo sem fim, pode gerar **loop infinito** e travar o navegador.
-- O **`worker`** retornado por `getInstance()` em geral é estável **enquanto** não chamar `terminate()`; após `terminate()`, o Singleton zera a instância e a próxima chamada pode devolver **outro** objeto — o React precisa reenfileirar o efeito (incluir `worker` nas deps é coerente com o que a aula comentou).
-
-**Registro do `onmessage`:** não chame `worker.onmessage(cb)` **direto no corpo** do componente (isso rodaria a **cada render** e reconfiguraria o handler). Use um **`useEffect`** dedicado. Lembre que no `TimerWorkerManager` **`onmessage` é um método** que recebe o callback: `worker.onmessage(e => { ... })`, e não atribuição `worker.onmessage = ...` (isso quebraria a API da classe).
-
-## Passo 1 — Tempos de teste (1 minuto)
-
-Para não esperar 25 minutos enquanto testa, alinhe o estado inicial em `src/contexts/TaskContext/initialTaskState.ts`:
+Inclua as constantes e os tipos:
 
 ```typescript
-config: {
-  workTime: 1,
-  shortBreakTime: 1,
-  longBreakTime: 1,
-},
+export const TaskActionTypes = {
+  START_TASK: 'START_TASK',
+  INTERRUPT_TASK: 'INTERRUPT_TASK',
+  RESET_STATE: 'RESET_STATE',
+  COUNT_DOWN: 'COUNT_DOWN',
+  COMPLETE_TASK: 'COMPLETE_TASK',
+} as const;
+
+export type TaskActionsWithPayload =
+  | {
+      type: typeof TaskActionTypes.START_TASK;
+      payload: TaskModel;
+    }
+  | {
+      type: typeof TaskActionTypes.COUNT_DOWN;
+      payload: { secondsRemaining: number };
+    };
+
+export type TaskActionsWithoutPayload =
+  | { type: typeof TaskActionTypes.RESET_STATE }
+  | { type: typeof TaskActionTypes.INTERRUPT_TASK }
+  | { type: typeof TaskActionTypes.COMPLETE_TASK };
 ```
 
-(Valores em **minutos**; o reducer continua convertendo com `duration * 60` para segundos.)
+Arquivo completo esperado: união `TaskActionModel` = `TaskActionsWithPayload | TaskActionsWithoutPayload`.
 
-## Passo 2 — `timerWorker.js` (estado, `endDate`, `tick`, `isRunning`)
+## Passo 2 — `taskReducer.ts`
 
-Arquivo: `src/workers/timerWorker.js`.
+### `COUNT_DOWN`
 
-- Variável **`let isRunning = false`** no **topo do arquivo** (escopo do worker), para o guard do Singleton na thread do worker.
-- Ao receber mensagem: se já estiver rodando, **retorna**.
-- Lê `activeTask` e `secondsRemaining` do `state` enviado pelo Provider.
-- `endDate` em **milissegundos**: `activeTask.startDate + secondsRemaining * 1000`.
-- Primeiro valor exibido: `Math.ceil((endDate - Date.now()) / 1000)`.
-- Em **`tick`**: `postMessage(countDownSeconds)`, atualiza com `Math.floor((endDate - now) / 1000)`, agenda o próximo tick com **`setTimeout(tick, 1000)`**.
-- Quando o countdown **chegar a 0 ou abaixo**, **não** agende mais `setTimeout` (evita ficar postando valores negativos). O Provider, ao receber `<= 0`, chama `terminate()` e loga conclusão.
+Atualiza só o tempo exibido, mantendo o resto do estado:
 
-```javascript
-let isRunning = false;
-
-self.onmessage = function (event) {
-  if (isRunning) return;
-
-  isRunning = true;
-
-  const state = event.data;
-  const { activeTask, secondsRemaining } = state;
-
-  const endDate = activeTask.startDate + secondsRemaining * 1000;
-  const now = Date.now();
-  let countDownSeconds = Math.ceil((endDate - now) / 1000);
-
-  function tick() {
-    self.postMessage(countDownSeconds);
-
-    const nowInner = Date.now();
-    countDownSeconds = Math.floor((endDate - nowInner) / 1000);
-
-    if (countDownSeconds <= 0) {
-      self.postMessage(0);
-      return;
-    }
-
-    setTimeout(tick, 1000);
-  }
-
-  tick();
-};
-```
-
-**Debug:** você pode conferir `endDate` com `new Date(endDate)` no console para ver a hora exata prevista de término.
-
-## Passo 3 — `TaskContextProvider.tsx`
-
-Arquivo: `src/contexts/TaskContext/TaskContextProvider.tsx`.
-
-1. Importe `TimerWorkerManager`.
-2. `const worker = TimerWorkerManager.getInstance()` no corpo do componente.
-3. **`useEffect`** só para registrar o retorno do worker: chamar **`worker.onmessage(e => { ... })`** (método do manager), logar `e.data`; se `countDownSeconds <= 0`, logar algo como `'Worker COMPLETED'` e chamar **`worker.terminate()`** (método do **manager**, que também zera o Singleton).
-4. **`useEffect`** que depende de **`[worker, state]`**:
-   - Se **`!state.activeTask`**: logar algo como `'Worker terminado por falta de activeTask'`, chamar **`worker.terminate()`**, e **`return`** (não enviar `postMessage` depois de matar o worker).
-   - Caso contrário: **`worker.postMessage(state)`**.
-
-```tsx
-import { useEffect, useReducer } from 'react';
-import { initialTaskState } from './initialTaskState';
-import { taskReducer } from './taskReducer';
-import { TaskContext } from './TaskContext';
-import { TimerWorkerManager } from '../../workers/TimerWorkerManager';
-
-type TaskContextProviderProps = {
-  children: React.ReactNode;
-};
-
-export function TaskContextProvider({ children }: TaskContextProviderProps) {
-  const [state, dispatch] = useReducer(taskReducer, initialTaskState);
-  const worker = TimerWorkerManager.getInstance();
-
-  useEffect(() => {
-    worker.onmessage(e => {
-      const countDownSeconds = e.data;
-      console.log(countDownSeconds);
-
-      if (countDownSeconds <= 0) {
-        console.log('Worker COMPLETED');
-        worker.terminate();
-      }
-    });
-  }, [worker]);
-
-  useEffect(() => {
-    if (!state.activeTask) {
-      console.log('Worker terminado por falta de activeTask');
-      worker.terminate();
-      return;
-    }
-
-    worker.postMessage(state);
-  }, [worker, state]);
-
-  return (
-    <TaskContext.Provider value={{ state, dispatch }}>
-      {children}
-    </TaskContext.Provider>
-  );
+```typescript
+case TaskActionTypes.COUNT_DOWN: {
+  return {
+    ...state,
+    secondsRemaining: action.payload.secondsRemaining,
+    formattedSecondsRemaining: formatSecondsToMinutes(
+      action.payload.secondsRemaining,
+    ),
+  };
 }
 ```
 
-## Fluxos que você deve conseguir reproduzir
+### `COMPLETE_TASK`
 
-1. **Iniciar tarefa:** console mostra countdown (ex.: 60 → 59 → … com `config` em 1 minuto).
-2. **Deixar chegar a 0:** aparece `Worker COMPLETED`, worker encerrado.
-3. **Interromper antes do fim:** estado perde `activeTask`, efeito manda `terminate` com log de falta de tarefa ativa.
+Espelha **`INTERRUPT_TASK`**, trocando **`interruptDate`** por **`completeDate`** na tarefa ativa. Garanta **zeragem explícita** para não ficar `1` ou `-1` no contador:
 
-## O que ainda não é desta tarefa (deixado para depois)
+```typescript
+case TaskActionTypes.COMPLETE_TASK: {
+  return {
+    ...state,
+    activeTask: null,
+    secondsRemaining: 0,
+    formattedSecondsRemaining: '00:00',
+    tasks: state.tasks.map(task => {
+      if (state.activeTask && state.activeTask.id === task.id) {
+        return { ...task, completeDate: Date.now() };
+      }
+      return task;
+    }),
+  };
+}
+```
 
-- **`dispatch`** com ação do tipo **“task completada”** ao receber `0` no Provider (a aula menciona que virá em seguida).
-- Atualizar **`secondsRemaining` / `formattedSecondsRemaining`** no estado a **cada** tick para o **CountDown** na tela (hoje o worker só loga no console).
+## Passo 3 — `TimerWorkerManager.ts`
+
+Tipagem do que a thread principal envia ao worker (alinhado ao estado da aplicação):
+
+```typescript
+import type { TaskStateModel } from '../models/TaskStateModel';
+
+// ...
+
+postMessage(message: TaskStateModel) {
+  this.worker.postMessage(message);
+}
+```
+
+## Passo 4 — `TaskContextProvider.tsx`
+
+No **`worker.onmessage`** (dentro de `useEffect`, como na tarefa anterior), use **`if / else`** para **nunca** misturar os dois dispatches na mesma lógica de forma perigosa:
+
+```tsx
+useEffect(() => {
+  worker.onmessage(e => {
+    const countDownSeconds = e.data;
+
+    if (countDownSeconds <= 0) {
+      dispatch({
+        type: TaskActionTypes.COMPLETE_TASK,
+      });
+      worker.terminate();
+    } else {
+      dispatch({
+        type: TaskActionTypes.COUNT_DOWN,
+        payload: { secondsRemaining: countDownSeconds },
+      });
+    }
+  });
+}, [worker]);
+```
+
+O segundo `useEffect` com `[worker, state]` continua responsável por: sem `activeTask` → `terminate()` + `return`; com `activeTask` → `worker.postMessage(state)`.
+
+**Debug (opcional):** um `console.log(state)` nesse efeito ajuda a conferir `completeDate` / `interruptDate` nas tarefas; depois você pode remover para não poluir o console.
+
+## Como validar
+
+1. Inicie uma tarefa: o **CountDown** deve **decrescer** na tela (lê `state.formattedSecondsRemaining`).
+2. Ao chegar em **zero**: botão de **play** volta, input **libera**, **Tips** mostra o próximo ciclo; no log opcional, aparece algo como **worker terminado por falta de active task** (efeito que roda com `activeTask === null`).
+3. Na lista de `tasks` (React DevTools ou log): a tarefa concluída tem **`completeDate` preenchido** e **`interruptDate` null**; se **interromper** antes do fim, **`interruptDate`** preenchido e **`completeDate` null**.
+
+## Observação para próximas aulas
+
+Com **rotas / outras páginas**, pode ser necessário **revisar** onde o Provider e o worker conversam com o estado global; por ora a lógica acima vale para a **Home** atual.
 
 ## Checklist
 
-- [ ] `initialTaskState` com tempos de teste se quiser ciclos de 1 minuto.
-- [ ] Worker com `isRunning`, `endDate`, `tick` + `setTimeout` recursivo e parada em `<= 0`.
-- [ ] Provider: `worker.onmessage(cb)` dentro de `useEffect`; segundo `useEffect` com `terminate` + `return` quando não há `activeTask`, e `postMessage(state)` só quando há tarefa.
-- [ ] Testou os três fluxos: contagem, conclusão, interrupção.
-
-## Se se perder na lógica
-
-São várias peças (Provider, `useEffect`, worker, tempo em ms, Singleton). Vale **reassistir** o trecho da aula e seguir o fluxo do dado: **state** → `postMessage` → worker → `postMessage` de volta → `onmessage` no Provider.
+- [ ] `COUNT_DOWN` e `COMPLETE_TASK` em `TaskActionTypes` e `TaskActionModel`.
+- [ ] Reducer com os dois `case`s e `COMPLETE_TASK` espelhando `INTERRUPT_TASK` com `completeDate`.
+- [ ] `onmessage` com `if (countDownSeconds <= 0)` → só `COMPLETE_TASK` + `terminate`; senão só `COUNT_DOWN`.
+- [ ] `TimerWorkerManager.postMessage` tipado com `TaskStateModel`.
