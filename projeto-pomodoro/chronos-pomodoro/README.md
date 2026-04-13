@@ -1,141 +1,95 @@
-# Tarefa: contador na UI — ações `COUNT_DOWN` e `COMPLETE_TASK`
+# Tarefa: identidade visual (favicon, título, PWA) e áudios para alerta de fim de ciclo
 
 ## Objetivo
 
-Fazer o **countdown visível** na aplicação: a cada tick o worker manda os **segundos restantes**; o **Provider** dá **`dispatch`** para atualizar `secondsRemaining` e `formattedSecondsRemaining`. Quando o valor chega em **0 ou menos**, **não** se dispara mais `COUNT_DOWN` — só **`COMPLETE_TASK`**, que zera o estado ativo, marca **`completeDate`** na tarefa e encerra o worker, igual ao fluxo de “timer acabou”.
+1. **Pasta `public/`** — deixar o app com **título** adequado, **favicon** nos navegadores e **Web App Manifest** para o Chrome/Edge oferecerem **“Instalar aplicativo”** (atalho em janela própria, sem precisar “instalar” um `.exe`).
+2. **Pasta `src/assets/audios/`** — incluir arquivos de som que serão usados **na próxima etapa** quando a tarefa for **completada** (contador chega a zero e disparamos `COMPLETE_TASK`): tocar um **alerta sonoro** para o usuário perceber o fim do Pomodoro.
 
-## Contexto da aula
+Nada disso exige importar imagem no React: favicons e manifest são referenciados **direto no `index.html`** com URLs que começam em `/` (raiz do site servida pelo Vite).
 
-- **`postMessage` no `TimerWorkerManager`:** tipar como `TaskStateModel` (o estado completo que já vai para o worker).
-- **`COUNT_DOWN`:** precisa de **payload** com os segundos (ex.: `{ secondsRemaining: number }`). Dá para amarrar ao tipo do estado com `Pick<TaskStateModel, 'secondsRemaining'>`, mas um tipo explícito com uma propriedade `secondsRemaining: number` é equivalente e simples.
-- **`COMPLETE_TASK`:** **sem payload**, como `INTERRUPT_TASK` — quem manda é o estado atual (`activeTask` no reducer).
-- **Um `dispatch` por mensagem:** se no `onmessage` você disparar `COUNT_DOWN` com `0` **e** depois `COMPLETE_TASK`, ou dois dispatches que brigam, pode aparecer **bug estranho** (contador “piscando”, valores negativos no estado). A regra: **`countDownSeconds > 0`** → só `COUNT_DOWN`; **`<= 0`** → só `COMPLETE_TASK` + `terminate()`.
+## Onde colocar os arquivos no projeto
 
-## Passo 1 — `taskActions.ts`
+| Tipo | Pasta no repositório | Uso |
+|------|----------------------|-----|
+| Favicon, ícones PWA, manifest | `projeto-pomodoro/chronos-pomodoro/public/images/` | A aula organiza em subpasta **`public/images/favicon/`** (todos os PNG/SVG/ICO + `site.webmanifest` juntos). O Vite expõe `public/` na **raiz** do endereço: arquivo em `public/images/favicon/favicon.ico` vira URL **`/images/favicon/favicon.ico`**. |
+| Sons de notificação | `projeto-pomodoro/chronos-pomodoro/src/assets/audios/` | Importados no código com `import ... from '@/assets/audios/arquivo.mp3'` (ou caminho relativo), para o bundler incluir o arquivo no build. |
 
-Inclua as constantes e os tipos:
+**Importante:** os caminhos em `index.html` e dentro de `site.webmanifest` (campo `icons[].src`) devem ser **idênticos** à estrutura real de pastas sob `public/`. Se os arquivos estiverem em `public/images/` sem subpasta `favicon`, use `/images/nome-do-arquivo.png`; se estiverem em `public/images/favicon/`, use `/images/favicon/nome-do-arquivo.png`.
 
-```typescript
-export const TaskActionTypes = {
-  START_TASK: 'START_TASK',
-  INTERRUPT_TASK: 'INTERRUPT_TASK',
-  RESET_STATE: 'RESET_STATE',
-  COUNT_DOWN: 'COUNT_DOWN',
-  COMPLETE_TASK: 'COMPLETE_TASK',
-} as const;
+## Passo 1 — Gerar favicon e manifest
 
-export type TaskActionsWithPayload =
-  | {
-      type: typeof TaskActionTypes.START_TASK;
-      payload: TaskModel;
-    }
-  | {
-      type: typeof TaskActionTypes.COUNT_DOWN;
-      payload: { secondsRemaining: number };
-    };
+1. Prepare uma imagem quadrada (ex.: ícone baseado em **Lucide** ou logo simples).
+2. Use um gerador online — o da aula é o **[RealFaviconGenerator](https://realfavicongenerator.net/)** (“The real favicon generator…”): envie a imagem e baixe o pacote com **`.ico`**, **PNG** em vários tamanhos, **SVG** (se disponível), **apple-touch-icon** e **`site.webmanifest`**.
+3. Alternativa gratuita: **[favicon.io](https://favicon.io/)** (texto, emoji ou upload de imagem → pacote para download).
 
-export type TaskActionsWithoutPayload =
-  | { type: typeof TaskActionTypes.RESET_STATE }
-  | { type: typeof TaskActionTypes.INTERRUPT_TASK }
-  | { type: typeof TaskActionTypes.COMPLETE_TASK };
+Copie o conteúdo gerado para:
+
+- `public/images/favicon/` (recomendado na aula), **ou**
+- `public/images/` mantendo nomes claros (`favicon.ico`, `favicon.svg`, `apple-touch-icon.png`, `web-app-manifest-192x192.png`, etc.).
+
+## Passo 2 — Ajustar `index.html`
+
+Arquivo: `projeto-pomodoro/chronos-pomodoro/index.html`.
+
+- **`lang`:** manter `pt-BR` se o app for em português.
+- **`<title>`:** trocar para o nome do produto, ex.: **`Chronos Pomodoro`**.
+- **Links de ícone:** substituir o favicon padrão do Vite pelas tags que o gerador forneceu, **ajustando apenas os `href`** para a sua pasta (exemplo com subpasta `favicon`):
+
+```html
+<link rel="icon" type="image/png" href="/images/favicon/favicon-96x96.png" sizes="96x96" />
+<link rel="icon" type="image/svg+xml" href="/images/favicon/favicon.svg" />
+<link rel="icon" type="image/png" href="/images/favicon/favicon.png" />
+<link rel="shortcut icon" href="/images/favicon/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/apple-touch-icon.png" />
+<link rel="manifest" href="/images/favicon/site.webmanifest" />
 ```
 
-Arquivo completo esperado: união `TaskActionModel` = `TaskActionsWithPayload | TaskActionsWithoutPayload`.
+## Passo 3 — `site.webmanifest` (PWA)
 
-## Passo 2 — `taskReducer.ts`
+O arquivo costuma vir do gerador com campos como:
 
-### `COUNT_DOWN`
+- `name` / `short_name` — nome longo e curto do app.
+- `lang` — ex.: `pt-BR`.
+- `icons` — lista com `src`, `sizes`, `type`, às vezes `purpose: "maskable"`.
+- `theme_color` / `background_color` — alinhados ao tema (ex.: cinza/verde do Chronos).
+- `display` — ex.: `standalone` (janela “limpa”, sem parecer aba de navegador).
+- `orientation`, `start_url`, `scope`, `description`, `id`.
 
-Atualiza só o tempo exibido, mantendo o resto do estado:
+Todos os **`src` dos ícones** no JSON devem ser URLs absolutas a partir da raiz, no mesmo padrão do `index.html`, por exemplo:
 
-```typescript
-case TaskActionTypes.COUNT_DOWN: {
-  return {
-    ...state,
-    secondsRemaining: action.payload.secondsRemaining,
-    formattedSecondsRemaining: formatSecondsToMinutes(
-      action.payload.secondsRemaining,
-    ),
-  };
-}
+```json
+"src": "/images/favicon/web-app-manifest-192x192.png"
 ```
 
-### `COMPLETE_TASK`
+Revise também `display_override` se o gerador incluir opções que você não quiser (a aula comenta preferência por janela simples).
 
-Espelha **`INTERRUPT_TASK`**, trocando **`interruptDate`** por **`completeDate`** na tarefa ativa. Garanta **zeragem explícita** para não ficar `1` ou `-1` no contador:
+## Passo 4 — Áudios em `src/assets/audios/`
 
-```typescript
-case TaskActionTypes.COMPLETE_TASK: {
-  return {
-    ...state,
-    activeTask: null,
-    secondsRemaining: 0,
-    formattedSecondsRemaining: '00:00',
-    tasks: state.tasks.map(task => {
-      if (state.activeTask && state.activeTask.id === task.id) {
-        return { ...task, completeDate: Date.now() };
-      }
-      return task;
-    }),
-  };
-}
-```
+Coloque um ou mais arquivos **`.mp3`** (ou `.ogg`) nesta pasta. No projeto de referência existem, por exemplo:
 
-## Passo 3 — `TimerWorkerManager.ts`
+- `gravitational_beep.mp3` — som citado na aula (inspiração em ondas gravitacionais / “bip” discreto).
+- Outras opções na mesma pasta para experimentar: `beep.mp3`, `tic_tac_planeta_miller.mp3`, etc.
 
-Tipagem do que a thread principal envia ao worker (alinhado ao estado da aplicação):
+**Onde baixar sons gratuitos (verifique sempre a licença):**
 
-```typescript
-import type { TaskStateModel } from '../models/TaskStateModel';
+- **[Freesound](https://freesound.org/)** — comunidade com filtros por licença (muitos CC0 / CC BY).
+- **[Mixkit](https://mixkit.co/free-sound-effects/)** — efeitos sonoros gratuitos para uso em projetos.
+- **[Pixabay](https://pixabay.com/sound-effects/)** — efeitos e músicas com licença própria do site.
+- **[Openverse](https://openverse.org/)** — busca agregada de mídia CC (inclui áudio).
 
-// ...
+Para o **“gravitational beep”** da narrativa da aula, muitas fontes citam divulgações da **LIGO/Virgo** (ondas gravitacionais convertidas em áudio) como material de divulgação científica — use cópias oficiais ou equivalentes com licença clara.
 
-postMessage(message: TaskStateModel) {
-  this.worker.postMessage(message);
-}
-```
-
-## Passo 4 — `TaskContextProvider.tsx`
-
-No **`worker.onmessage`** (dentro de `useEffect`, como na tarefa anterior), use **`if / else`** para **nunca** misturar os dois dispatches na mesma lógica de forma perigosa:
-
-```tsx
-useEffect(() => {
-  worker.onmessage(e => {
-    const countDownSeconds = e.data;
-
-    if (countDownSeconds <= 0) {
-      dispatch({
-        type: TaskActionTypes.COMPLETE_TASK,
-      });
-      worker.terminate();
-    } else {
-      dispatch({
-        type: TaskActionTypes.COUNT_DOWN,
-        payload: { secondsRemaining: countDownSeconds },
-      });
-    }
-  });
-}, [worker]);
-```
-
-O segundo `useEffect` com `[worker, state]` continua responsável por: sem `activeTask` → `terminate()` + `return`; com `activeTask` → `worker.postMessage(state)`.
-
-**Debug (opcional):** um `console.log(state)` nesse efeito ajuda a conferir `completeDate` / `interruptDate` nas tarefas; depois você pode remover para não poluir o console.
-
-## Como validar
-
-1. Inicie uma tarefa: o **CountDown** deve **decrescer** na tela (lê `state.formattedSecondsRemaining`).
-2. Ao chegar em **zero**: botão de **play** volta, input **libera**, **Tips** mostra o próximo ciclo; no log opcional, aparece algo como **worker terminado por falta de active task** (efeito que roda com `activeTask === null`).
-3. Na lista de `tasks` (React DevTools ou log): a tarefa concluída tem **`completeDate` preenchido** e **`interruptDate` null**; se **interromper** antes do fim, **`interruptDate`** preenchido e **`completeDate` null**.
-
-## Observação para próximas aulas
-
-Com **rotas / outras páginas**, pode ser necessário **revisar** onde o Provider e o worker conversam com o estado global; por ora a lógica acima vale para a **Home** atual.
+Nesta tarefa **basta** ter o arquivo no disco; **tocar** o som ao completar a task será implementado na próxima instrução (ex.: `Audio` ou `new Audio(url)` no fluxo do `COMPLETE_TASK` / Provider).
 
 ## Checklist
 
-- [ ] `COUNT_DOWN` e `COMPLETE_TASK` em `TaskActionTypes` e `TaskActionModel`.
-- [ ] Reducer com os dois `case`s e `COMPLETE_TASK` espelhando `INTERRUPT_TASK` com `completeDate`.
-- [ ] `onmessage` com `if (countDownSeconds <= 0)` → só `COMPLETE_TASK` + `terminate`; senão só `COUNT_DOWN`.
-- [ ] `TimerWorkerManager.postMessage` tipado com `TaskStateModel`.
+- [ ] Arquivos de favicon + `site.webmanifest` copiados para `public/images/` ou `public/images/favicon/`.
+- [ ] `index.html` com `<title>Chronos Pomodoro</title>` (ou nome final do app) e `<link>`s coerentes com os caminhos reais.
+- [ ] `site.webmanifest` com `icons[].src` apontando para arquivos que existem em `public/`.
+- [ ] Pelo menos um `.mp3` em `src/assets/audios/` para o alerta de fim de ciclo.
+- [ ] Teste: abrir o app, ver ícone na aba; no Chrome, ver opção de instalar / atalho (quando os critérios de PWA forem atendidos).
+
+## Referência rápida de pastas no repositório
+
+- `projeto-pomodoro/chronos-pomodoro/public/images/` — assets estáticos servidos em `/images/...`
+- `projeto-pomodoro/chronos-pomodoro/src/assets/audios/` — áudios importados pelo código React/Vite
