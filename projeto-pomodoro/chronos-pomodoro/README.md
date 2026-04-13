@@ -1,95 +1,194 @@
-# Tarefa: identidade visual (favicon, título, PWA) e áudios para alerta de fim de ciclo
+# Tarefa: tocar áudio ao completar o ciclo — `loadBeep`, Safari e `useRef`
 
 ## Objetivo
 
-1. **Pasta `public/`** — deixar o app com **título** adequado, **favicon** nos navegadores e **Web App Manifest** para o Chrome/Edge oferecerem **“Instalar aplicativo”** (atalho em janela própria, sem precisar “instalar” um `.exe`).
-2. **Pasta `src/assets/audios/`** — incluir arquivos de som que serão usados **na próxima etapa** quando a tarefa for **completada** (contador chega a zero e disparamos `COMPLETE_TASK`): tocar um **alerta sonoro** para o usuário perceber o fim do Pomodoro.
+Tocar o arquivo **`src/assets/audios/gravitational_beep.mp3`** quando o contador chega a **zero** (worker manda `<= 0` → `COMPLETE_TASK`), respeitando as regras de **autoplay** dos navegadores — em especial o **Safari**, que costuma bloquear `audio.play()` se não houver vínculo com **gesto do usuário**.
 
-Nada disso exige importar imagem no React: favicons e manifest são referenciados **direto no `index.html`** com URLs que começam em `/` (raiz do site servida pelo Vite).
+## Contexto: por que não é só `new Audio().play()`?
 
-## Onde colocar os arquivos no projeto
+- Em **Chrome / Edge / Firefox / Opera**, muitas vezes basta carregar e chamar `play()` depois.
+- No **Safari**, se o usuário clicou em **Iniciar**, passou o tempo e só então o código tenta `play()`, o navegador pode tratar como reprodução **sem** interação recente e **bloquear**.
+- **HTTPS:** em desenvolvimento local, o Safari pode ser mais rígido; em produção com **HTTPS** (ex.: deploy com certificado) o comportamento costuma alinhar com o que você vê nos outros navegadores.
 
-| Tipo | Pasta no repositório | Uso |
-|------|----------------------|-----|
-| Favicon, ícones PWA, manifest | `projeto-pomodoro/chronos-pomodoro/public/images/` | A aula organiza em subpasta **`public/images/favicon/`** (todos os PNG/SVG/ICO + `site.webmanifest` juntos). O Vite expõe `public/` na **raiz** do endereço: arquivo em `public/images/favicon/favicon.ico` vira URL **`/images/favicon/favicon.ico`**. |
-| Sons de notificação | `projeto-pomodoro/chronos-pomodoro/src/assets/audios/` | Importados no código com `import ... from '@/assets/audios/arquivo.mp3'` (ou caminho relativo), para o bundler incluir o arquivo no build. |
+Estratégia da aula: no momento em que existe **`activeTask`** (logo após o usuário iniciar o ciclo), **carregar** o áudio com `load()` e disparar um **`play()` imediato** (ainda “perto” da cadeia do clique). Isso **prepara** o mesmo elemento de áudio para um segundo `play()` no **fim** do timer, quando **não** há clique.
 
-**Importante:** os caminhos em `index.html` e dentro de `site.webmanifest` (campo `icons[].src`) devem ser **idênticos** à estrutura real de pastas sob `public/`. Se os arquivos estiverem em `public/images/` sem subpasta `favicon`, use `/images/nome-do-arquivo.png`; se estiverem em `public/images/favicon/`, use `/images/favicon/nome-do-arquivo.png`.
+## Arquivos envolvidos
 
-## Passo 1 — Gerar favicon e manifest
+| Arquivo | Papel |
+|---------|--------|
+| `src/utils/loadBeep.ts` | Importa o `.mp3` via bundler, cria `Audio`, chama `load()`, retorna função que faz `currentTime = 0` e `play().catch(...)`. |
+| `src/contexts/TaskContext/TaskContextProvider.tsx` | `useRef` guarda a função retornada por `loadBeep`; um `useEffect` depende só de `state.activeTask`; o `onmessage` do worker chama o beep antes de `COMPLETE_TASK` quando `countDownSeconds <= 0`. |
+| `src/assets/audios/gravitational_beep.mp3` | Som usado na aula (pode trocar por outro `.mp3` mantendo o import). |
 
-1. Prepare uma imagem quadrada (ex.: ícone baseado em **Lucide** ou logo simples).
-2. Use um gerador online — o da aula é o **[RealFaviconGenerator](https://realfavicongenerator.net/)** (“The real favicon generator…”): envie a imagem e baixe o pacote com **`.ico`**, **PNG** em vários tamanhos, **SVG** (se disponível), **apple-touch-icon** e **`site.webmanifest`**.
-3. Alternativa gratuita: **[favicon.io](https://favicon.io/)** (texto, emoji ou upload de imagem → pacote para download).
+## Passo 1 — `loadBeep` (`src/utils/loadBeep.ts`)
 
-Copie o conteúdo gerado para:
+1. Importe o MP3 (caminho relativo a partir de `src/utils/`):
 
-- `public/images/favicon/` (recomendado na aula), **ou**
-- `public/images/` mantendo nomes claros (`favicon.ico`, `favicon.svg`, `apple-touch-icon.png`, `web-app-manifest-192x192.png`, etc.).
+   `import gravitationalBeep from '../assets/audios/gravitational_beep.mp3';`
 
-## Passo 2 — Ajustar `index.html`
+2. Dentro de `loadBeep()`:
+   - `const audio = new Audio(gravitationalBeep);`
+   - `audio.load();`
+   - **Retorne** uma função sem argumentos que:
+     - defina `audio.currentTime = 0` (para repetir o mesmo arquivo do início);
+     - chame `audio.play().catch(error => console.log('Erro ao tocar áudio', error));`
 
-Arquivo: `projeto-pomodoro/chronos-pomodoro/index.html`.
+Assim você separa **carregar** (e expor o “player”) de **tocar** quando quiser.
 
-- **`lang`:** manter `pt-BR` se o app for em português.
-- **`<title>`:** trocar para o nome do produto, ex.: **`Chronos Pomodoro`**.
-- **Links de ícone:** substituir o favicon padrão do Vite pelas tags que o gerador forneceu, **ajustando apenas os `href`** para a sua pasta (exemplo com subpasta `favicon`):
+### Código-fonte completo — `src/utils/loadBeep.ts`
 
-```html
-<link rel="icon" type="image/png" href="/images/favicon/favicon-96x96.png" sizes="96x96" />
-<link rel="icon" type="image/svg+xml" href="/images/favicon/favicon.svg" />
-<link rel="icon" type="image/png" href="/images/favicon/favicon.png" />
-<link rel="shortcut icon" href="/images/favicon/favicon.ico" />
-<link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/apple-touch-icon.png" />
-<link rel="manifest" href="/images/favicon/site.webmanifest" />
+```typescript
+import gravitationalBeep from '../assets/audios/gravitational_beep.mp3';
+
+/**
+ * Prepares a short notification sound for playback in the browser.
+ *
+ * Browsers (especially Safari) often block `HTMLMediaElement.play()` unless
+ * audio was “unlocked” in a user-gesture context. This helper loads the asset
+ * once and returns a zero-argument function that rewinds to the start and plays.
+ *
+ * @returns A function that resets `currentTime` to 0 and calls `play()`; rejects are logged.
+ */
+export function loadBeep() {
+  const audio = new Audio(gravitationalBeep);
+  audio.load();
+
+  return () => {
+    audio.currentTime = 0;
+    audio.play().catch(error => console.log('Erro ao tocar áudio', error));
+  };
+}
 ```
 
-## Passo 3 — `site.webmanifest` (PWA)
+## Passo 2 — Por que `useRef` e não `let` no corpo do componente?
 
-O arquivo costuma vir do gerador com campos como:
+A cada atualização de estado, o **Provider** renderiza de novo. Variáveis declaradas no corpo da função **resetam**. A função retornada por `loadBeep()` precisa **persistir** entre renders até o fim do ciclo → use **`useRef`**.
 
-- `name` / `short_name` — nome longo e curto do app.
-- `lang` — ex.: `pt-BR`.
-- `icons` — lista com `src`, `sizes`, `type`, às vezes `purpose: "maskable"`.
-- `theme_color` / `background_color` — alinhados ao tema (ex.: cinza/verde do Chronos).
-- `display` — ex.: `standalone` (janela “limpa”, sem parecer aba de navegador).
-- `orientation`, `start_url`, `scope`, `description`, `id`.
+Tipagem sugerida:
 
-Todos os **`src` dos ícones** no JSON devem ser URLs absolutas a partir da raiz, no mesmo padrão do `index.html`, por exemplo:
-
-```json
-"src": "/images/favicon/web-app-manifest-192x192.png"
+```typescript
+const playBeepRef = useRef<ReturnType<typeof loadBeep> | null>(null);
 ```
 
-Revise também `display_override` se o gerador incluir opções que você não quiser (a aula comenta preferência por janela simples).
+`ReturnType<typeof loadBeep>` é o tipo da função “tocar” retornada por `loadBeep`.
 
-## Passo 4 — Áudios em `src/assets/audios/`
+## Passo 3 — `useEffect` só quando `activeTask` muda
 
-Coloque um ou mais arquivos **`.mp3`** (ou `.ogg`) nesta pasta. No projeto de referência existem, por exemplo:
+Não use o efeito que roda a **cada segundo** (`COUNT_DOWN`) para carregar o beep — isso dispararia lógica demais e confundiria o fluxo.
 
-- `gravitational_beep.mp3` — som citado na aula (inspiração em ondas gravitacionais / “bip” discreto).
-- Outras opções na mesma pasta para experimentar: `beep.mp3`, `tic_tac_planeta_miller.mp3`, etc.
+Use **`useEffect(..., [state.activeTask])`**:
 
-**Onde baixar sons gratuitos (verifique sempre a licença):**
+1. Se **não** há `activeTask`: `playBeepRef.current = null` e `return` (interrompeu ou zerou estado).
+2. Se há `activeTask` e **`playBeepRef.current === null`**:
+   - `const play = loadBeep();`
+   - `playBeepRef.current = play;`
+   - chame **`play()` uma vez** na sequência (desbloqueio Safari / “primeiro play” logo após o usuário iniciar).
 
-- **[Freesound](https://freesound.org/)** — comunidade com filtros por licença (muitos CC0 / CC BY).
-- **[Mixkit](https://mixkit.co/free-sound-effects/)** — efeitos sonoros gratuitos para uso em projetos.
-- **[Pixabay](https://pixabay.com/sound-effects/)** — efeitos e músicas com licença própria do site.
-- **[Openverse](https://openverse.org/)** — busca agregada de mídia CC (inclui áudio).
+**Cuidado com o `else`:** não faça `if (activeTask && ref === null) { ... } else { ref = null }`, porque quando a tarefa **continua ativa** e a ref **já foi preenchida**, o `else` esvaziaria a ref no meio do ciclo. O correto é: **só** zera a ref quando **`!state.activeTask`**.
 
-Para o **“gravitational beep”** da narrativa da aula, muitas fontes citam divulgações da **LIGO/Virgo** (ondas gravitacionais convertidas em áudio) como material de divulgação científica — use cópias oficiais ou equivalentes com licença clara.
+## Passo 4 — Tocar de novo no `onmessage` ao completar
 
-Nesta tarefa **basta** ter o arquivo no disco; **tocar** o som ao completar a task será implementado na próxima instrução (ex.: `Audio` ou `new Audio(url)` no fluxo do `COMPLETE_TASK` / Provider).
+No efeito que registra `worker.onmessage`, quando **`countDownSeconds <= 0`**:
+
+1. Se `playBeepRef.current` existir, chame `playBeepRef.current()` e depois `playBeepRef.current = null`.
+2. Em seguida `dispatch(COMPLETE_TASK)` e `worker.terminate()` (como já estava o fluxo do timer).
+
+Ordem sugerida: **som → completar estado → matar worker**.
+
+### Código-fonte completo — `src/contexts/TaskContext/TaskContextProvider.tsx`
+
+```tsx
+import { useEffect, useReducer, useRef } from 'react';
+import { initialTaskState } from './initialTaskState';
+import { taskReducer } from './taskReducer';
+import { TaskContext } from './TaskContext';
+import { TimerWorkerManager } from '../../workers/TimerWorkerManager';
+import { TaskActionTypes } from './taskActions';
+import { loadBeep } from '../../utils/loadBeep';
+
+type TaskContextProviderProps = {
+  children: React.ReactNode;
+};
+
+export function TaskContextProvider({ children }: TaskContextProviderProps) {
+  const [state, dispatch] = useReducer(taskReducer, initialTaskState);
+  const playBeepRef = useRef<ReturnType<typeof loadBeep> | null>(null);
+
+  const worker = TimerWorkerManager.getInstance();
+
+  useEffect(() => {
+    worker.onmessage(e => {
+      const countDownSeconds = e.data;
+
+      if (countDownSeconds <= 0) {
+        if (playBeepRef.current) {
+          playBeepRef.current();
+          playBeepRef.current = null;
+        }
+        dispatch({
+          type: TaskActionTypes.COMPLETE_TASK,
+        });
+        worker.terminate();
+      } else {
+        dispatch({
+          type: TaskActionTypes.COUNT_DOWN,
+          payload: { secondsRemaining: countDownSeconds },
+        });
+      }
+    });
+  }, [worker]);
+
+  useEffect(() => {
+
+    if (!state.activeTask) {
+      worker.terminate();
+      return;
+    }
+
+    worker.postMessage(state);
+  }, [worker, state]);
+
+  useEffect(() => {
+    if (!state.activeTask) {
+      playBeepRef.current = null;
+      return;
+    }
+
+    if (playBeepRef.current === null) {
+      const play = loadBeep();
+      playBeepRef.current = play;
+      // Safari: primeiro play ainda “perto” do clique em Iniciar ajuda a destravar autoplay depois.
+      play();
+    }
+  }, [state.activeTask]);
+
+  return (
+    <TaskContext.Provider value={{ state, dispatch }}>
+      {children}
+    </TaskContext.Provider>
+  );
+}
+```
+
+## Comportamento esperado
+
+- Ao **iniciar** uma tarefa: carrega o áudio e toca **uma vez** (pode ser um “tu” bem curto no início do arquivo — normal no som gravitacional da aula).
+- Ao **terminar** sozinho: log de countdown chega a 0, toca de novo, estado completa, worker encerra.
+- Ao **interromper** antes do fim: `activeTask` vira `null`, ref é limpa; ao **iniciar outra** tarefa, o fluxo de carregar + primeiro `play()` repete.
+
+## Limpeza
+
+Remova `console.log` de depuração (“carregando áudio”, “tocando áudio”, etc.) no código final. Para achar sobras: busca no projeto por `console.log`.
 
 ## Checklist
 
-- [ ] Arquivos de favicon + `site.webmanifest` copiados para `public/images/` ou `public/images/favicon/`.
-- [ ] `index.html` com `<title>Chronos Pomodoro</title>` (ou nome final do app) e `<link>`s coerentes com os caminhos reais.
-- [ ] `site.webmanifest` com `icons[].src` apontando para arquivos que existem em `public/`.
-- [ ] Pelo menos um `.mp3` em `src/assets/audios/` para o alerta de fim de ciclo.
-- [ ] Teste: abrir o app, ver ícone na aba; no Chrome, ver opção de instalar / atalho (quando os critérios de PWA forem atendidos).
+- [ ] `gravitational_beep.mp3` presente em `src/assets/audios/`.
+- [ ] `loadBeep` com `load()`, retorno que faz `currentTime = 0` e `play().catch(...)`.
+- [ ] `playBeepRef` com `ReturnType<typeof loadBeep> | null`.
+- [ ] Efeito com deps `[state.activeTask]` sem esvaziar a ref enquanto a tarefa segue ativa.
+- [ ] Primeiro `play()` logo após `loadBeep` ao iniciar tarefa.
+- [ ] Segundo `play()` no ramo `countDownSeconds <= 0` antes do `COMPLETE_TASK`.
 
-## Referência rápida de pastas no repositório
+## Safari e HTTPS (lembrete)
 
-- `projeto-pomodoro/chronos-pomodoro/public/images/` — assets estáticos servidos em `/images/...`
-- `projeto-pomodoro/chronos-pomodoro/src/assets/audios/` — áudios importados pelo código React/Vite
+Teste em Safari com **HTTPS** em produção ou ambiente equivalente; em `http://localhost` algumas versões se comportam diferente. Se o som falhar só no Safari, revise se o **primeiro** `play()` ainda ocorre no fluxo imediatamente após o usuário **iniciar** a tarefa.
