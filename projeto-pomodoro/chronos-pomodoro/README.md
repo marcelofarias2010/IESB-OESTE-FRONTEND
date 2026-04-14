@@ -1,88 +1,61 @@
-# Tarefa: página **History** — layout, tabela responsiva e rota
+# Tarefa: histórico com **tasks reais** do estado
 
 ## Objetivo
 
-Criar a página de **histórico** com estrutura visual pronta: título, botão de apagar (ícone), tabela com cabeçalhos e linhas de exemplo, CSS em **módulo**, **scroll horizontal** em telas estreitas e rota **`/history/`** no roteador. A lógica de dados (listar `state.tasks`, apagar histórico, status real) fica para aulas seguintes.
+Substituir linhas mock (`Array.from`) por dados vindos de **`state.tasks`** no `useTaskContext`, usando **`task.id`** como `key`, exibindo colunas provisórias (data como string, status cru, tipo sem traduzir). Ordenar para que a **última tarefa criada apareça primeiro**.
 
-## O que foi feito (resumo)
+Nas próximas aulas: formatação de data, status (em progresso / completa / interrompida / abandonada), dicionário de tipo, estado vazio, botão de limpar histórico e página de configurações (sem limpar `localStorage` manualmente).
 
-| Item | Detalhe |
-|------|---------|
-| Página | `src/pages/History/index.tsx` — `MainTemplate`, `Container`, `Heading`, tabela dentro de wrapper |
-| Estilos | `src/pages/History/styles.module.css` — botão compacto + tabela responsiva |
-| Rotas | `src/routers/MainRouter/index.tsx` — `<Route path='/history/' element={<History />} />` |
-| Menu | `src/components/Menu/index.tsx` — link para `/history/` (já existente) |
+## Pré-requisitos
 
----
+- `TaskContextProvider` persistindo estado (ex.: `localStorage`).
+- Ao mudar **`initialTaskState.config`** (25/5/15 min) e o storage já tiver estado antigo, pode ser preciso **limpar** a chave `state` no DevTools → **Application** → **Local Storage** → **Clear** (até existir UI de configuração).
 
-## Passo 1 — Registrar a rota
+## Passo 1 — `useTaskContext` na página History
 
-Arquivo: `src/routers/MainRouter/index.tsx`
+Importe o hook e leia `state.tasks`.
 
-Importe a página e adicione a rota (o path deve bater com o `href` do menu):
+## Passo 2 — Ordenação (mais recente primeiro)
 
-```tsx
-import { History } from '../../pages/History';
+O array `tasks` no reducer costuma ir **acumulando** na ordem em que as tarefas foram criadas. Para listar **do mais novo para o mais antigo**, use uma cópia invertida (não mutar `state.tasks`):
 
-// dentro de <Routes>:
-<Route path='/history/' element={<History />} />
+```ts
+const tasksNewestFirst = [...state.tasks].reverse();
 ```
 
-### Trecho atual do router
+## Passo 3 — `map` com `key={task.id}`
+
+Cada linha: `key={task.id}` — não use índice do array quando houver id estável.
+
+## Passo 4 — Colunas (provisório)
+
+| Coluna    | Fonte / nota |
+|-----------|----------------|
+| Tarefa    | `task.name` |
+| Duração   | `task.duration` + sufixo `min` |
+| Data      | Por ora `new Date(task.startDate).toISOString()` ou similar; depois formatador dedicado |
+| Status    | Depois: lógica com `completeDate`, `interruptDate`, “em progresso”, abandonada; por ora pode exibir valor cru para debug |
+| Tipo      | `task.type` (`workTime`, etc.); depois dicionário PT-BR |
+
+## Passo 5 — Atualização do `Heading` (suporte ao título + botão)
+
+Para o cabeçalho da página History (texto **History** + botão de lixeira) funcionar com o layout atual, o `Heading` permanece como componente simples que renderiza `children` dentro de `h1` com classe CSS.
+
+Arquivo: `src/components/Heading/index.tsx`
 
 ```tsx
-import { BrowserRouter, Route, Routes, useLocation } from 'react-router';
-import { AboutPomodoro } from '../../pages/AboutPomodoro';
-import { NotFound } from '../../pages/NotFound';
-import { Home } from '../../pages/Home';
-import { useEffect } from 'react';
-import { History } from '../../pages/History';
+import styles from './styles.module.css';
 
-function ScrollToTop() {
-  const { pathname } = useLocation();
+type HeadingProps = {
+  children: React.ReactNode;
+};
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [pathname]);
-
-  return null;
-}
-
-export function MainRouter() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path='/' element={<Home />} />
-        <Route path='/history/' element={<History />} />
-        <Route path='/about-pomodoro/' element={<AboutPomodoro />} />
-        <Route path='*' element={<NotFound />} />
-      </Routes>
-      <ScrollToTop />
-    </BrowserRouter>
-  );
+export function Heading({ children }: HeadingProps) {
+  return <h1 className={styles.heading}>{children}</h1>;
 }
 ```
 
----
-
-## Passo 2 — Link no menu
-
-Arquivo: `src/components/Menu/index.tsx`
-
-Garanta `RouterLink` (ou `Link`) com `href='/history/'` e ícone de histórico — como no código atual.
-
----
-
-## Passo 3 — Página `History`
-
-Arquivo: `src/pages/History/index.tsx`
-
-- Dois `Container`s: um com `Heading` (título + área do botão), outro com a tabela.
-- Botão: `DefaultButton` com `TrashIcon`, `color='red'`, `aria-label` e `title` para acessibilidade.
-- Tabela: `thead` com colunas **Tarefa, Duração, Data, Status, Tipo**; `tbody` com linhas geradas só para **protótipo visual** (`Array.from({ length: 20 })`).
-- **`key`:** com dados reais use o **id da tarefa**; com índice temporário, `key={index}` é aceitável só neste mock (a aula alerta para não depender de índice quando a lista for reordenável).
-
-### Código-fonte atual
+## Código-fonte atual — `src/pages/History/index.tsx`
 
 ```tsx
 import { TrashIcon } from 'lucide-react';
@@ -92,8 +65,13 @@ import { Heading } from '../../components/Heading';
 import { MainTemplate } from '../../templates/MainTemplate';
 
 import styles from './styles.module.css';
+import { useTaskContext } from '../../contexts/TaskContext';
 
 export function History() {
+  const { state } = useTaskContext();
+  /** Mais recente primeiro (última criada no topo). */
+  const tasksNewestFirst = [...state.tasks].reverse();
+
   return (
     <MainTemplate>
       <Container>
@@ -124,14 +102,14 @@ export function History() {
             </thead>
 
             <tbody>
-              {Array.from({ length: 20 }).map((_, index) => {
+              {tasksNewestFirst.map(task => {
                 return (
-                  <tr key={index}>
-                    <td>Estudar</td>
-                    <td>25min</td>
-                    <td>20/04/2025 08:00</td>
-                    <td>Completa</td>
-                    <td>Foco</td>
+                  <tr key={task.id}>
+                    <td>{task.name}</td>
+                    <td>{task.duration}min</td>
+                    <td>{new Date(task.startDate).toISOString()}</td>
+                    <td>{task.interruptDate}</td>
+                    <td>{task.type}</td>
                   </tr>
                 );
               })}
@@ -144,82 +122,25 @@ export function History() {
 }
 ```
 
----
-
-## Passo 4 — CSS modular (botão + tabela responsiva)
-
-Arquivo: `src/pages/History/styles.module.css`
-
-- **`.buttonContainer button`:** reduz largura mínima padrão do `DefaultButton` (ex.: `min-width: auto`), ajusta `padding` e tamanho do SVG — o botão de ícone não fica “largão” como o de play.
-- **`.responsiveTable`:** `overflow-x: auto` para rolagem lateral quando a tabela for mais larga que a tela (mobile).
-- **`table`:** `width: 100%`, `min-width: 64rem` para não esmagar colunas; `border-collapse: collapse`.
-- **`th` / `td`:** cores do tema (`--gray-600` / `--gray-800`), borda inferior, `text-align: left`, `padding`.
-
-### Código-fonte atual
-
-```css
-.buttonContainer button {
-  min-width: auto;
-  margin: 0;
-  padding: 1rem;
-}
-
-.buttonContainer button svg {
-  width: 2rem;
-  height: 2rem;
-}
-
-.responsiveTable {
-  overflow-x: auto;
-  border-radius: 0.8rem;
-}
-
-.responsiveTable table {
-  width: 100%;
-  min-width: 64rem;
-  font-size: 1.6rem;
-  border-collapse: collapse;
-}
-
-.responsiveTable th {
-  background-color: var(--gray-600);
-}
-
-.responsiveTable td {
-  background-color: var(--gray-800);
-}
-
-.responsiveTable th,
-.responsiveTable td {
-  border-bottom: 0.2rem solid var(--gray-700);
-  text-align: left;
-  padding: 1.6rem;
-}
-```
-
-**Confira** o `className` no JSX: `styles.responsiveTable` e `styles.buttonContainer` (nome do arquivo `styles.module.css` importado como `styles`).
-
----
-
 ## Como validar
 
-1. Acesse `/history/` pelo menu ou pela URL.
-2. Em viewport estreita, a área da tabela deve rolar **horizontalmente** sem quebrar o layout inteiro da página.
-3. O botão vermelho de lixeira deve ficar visualmente **compacto** ao lado do título.
-4. Navegue entre Home e History: o `ScrollToTop` do router deve levar ao topo ao mudar de rota.
-
----
+1. Crie algumas tarefas na Home, interrompa ou complete algumas.
+2. Abra **History**: linhas batem com `state.tasks`, última criada no **topo**.
+3. Recarregue: dados persistem conforme sua estratégia de `localStorage`.
 
 ## Próximas aulas (fora desta tarefa)
 
-- Popular a tabela com `state.tasks` (map real).
-- Implementar **apagar histórico** (`dispatch` + `localStorage` ou action dedicada).
-- Status: completa / interrompida / abandonada conforme regras do app.
+- Formatar **data/hora** de forma legível.
+- **Status** com quatro estados e regras claras.
+- **Traduzir** `task.type` para texto amigável.
+- **Lista vazia**: mensagem amigável em vez de tabela vazia.
+- **Botão** de limpar histórico com `dispatch` / ação dedicada.
+- Página de **configurações** para não depender de limpar storage na mão.
 
 ## Checklist
 
-- [ ] Rota `/history/` no `MainRouter` e import de `History` de `pages/History`.
-- [ ] Menu com link para `/history/`.
-- [ ] Página com `Heading`, botão `DefaultButton` vermelho com `aria-label` e `title`.
-- [ ] Tabela dentro de `.responsiveTable` com CSS de overflow e `min-width` na `table`.
-- [ ] `styles.module.css` importado corretamente (`import styles from './styles.module.css'`).
+- [ ] `state.tasks.map` (ou cópia ordenada) em vez de `Array.from` mock.
+- [ ] `key={task.id}`.
+- [ ] Ordem: mais recente primeiro (`[...state.tasks].reverse()` ou equivalente).
+- [ ] `Heading` atualizado/confirmado para receber `children` e compor título + ações (lixeira).
+- [ ] Entender que mudanças em `config` podem exigir limpar `localStorage` até ter UI de settings.
