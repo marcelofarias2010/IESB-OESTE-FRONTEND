@@ -34,6 +34,7 @@ export type TaskModel = {
   completeDate: number | null; // quando o timer chega ao final
   interruptDate: number | null; // quando a task for interrompida
   type: keyof TaskStateModel['config'];
+};
 ```
 
 💡 **Por que usar `number` para as datas?** Ao invés de usar o objeto Date
