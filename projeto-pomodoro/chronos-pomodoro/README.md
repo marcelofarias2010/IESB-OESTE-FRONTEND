@@ -1,306 +1,240 @@
-# Tarefa: criar o `RouterLink` (wrapper) e substituir links da aplicação
+# Tarefa: atualizar o título da aba com o contador + preencher input com última tarefa
 
 ## Objetivo da aula
 
-Depois de organizar as rotas no `MainRouter`, o próximo passo é **parar de usar `Link` do React Router diretamente** em vários componentes.
+Nesta etapa você vai aplicar dois ajustes simples, mas com impacto real de usabilidade:
 
-Nesta aula você vai:
-
-1. criar um componente próprio de link (`RouterLink`);
-2. padronizar o uso de `href` (estilo âncora HTML) em vez de `to`;
-3. substituir os links espalhados em `Menu`, `Footer`, `Logo`, `AboutPomodoro` e `NotFound`.
-
-Isso reduz acoplamento com biblioteca externa e facilita manutenção futura.
+1. **Mostrar o tempo restante no título da aba do navegador**  
+   Exemplo: `24:59 - Chronos Pomodoro`.
+2. **Preencher automaticamente o campo da task com o nome da última tarefa criada**  
+   Assim o usuário não precisa digitar tudo de novo se for repetir/editar.
 
 ---
 
-## Por que fazer wrapper de link?
+## O que foi feito no `TaskContextProvider`
 
-Se o React Router mudar API no futuro, você não precisa caçar `Link` em todo projeto.
-Você ajusta **um único ponto**: o seu `RouterLink`.
+Arquivo: `src/contexts/TaskContext/TaskContextProvider.tsx`
 
-É a mesma ideia de adapter que já usamos com mensagens (`showMessage`).
+A lógica aproveita o efeito que já reagia ao estado e adiciona:
 
----
-
-## Passo 1 — Criar o componente `RouterLink`
-
-Arquivo: `src/components/RouterLink/index.tsx`
-
-### Código-fonte
-
-```tsx
-import { Link } from 'react-router';
-
-type RouterLinkProps = {
-  children: React.ReactNode;
-  href: string;
-} & React.ComponentProps<'a'>;
-
-export function RouterLink({ children, href, ...props }: RouterLinkProps) {
-  return (
-    <Link to={href} {...props}>
-      {children}
-    </Link>
-  );
-}
+```ts
+document.title = `${state.formattedSecondsRemaining} - Chronos Pomodoro`;
 ```
 
-### O que esse código faz
+Isso garante atualização contínua do título conforme o `formattedSecondsRemaining` muda.
 
-- `href` é obrigatório e vira `to` internamente.
-- `React.ComponentProps<'a'>` permite passar props comuns de link (`className`, `title`, `aria-label`, etc.).
-- `children` mantém flexibilidade (texto, ícone, JSX).
-
----
-
-## Passo 2 — Substituir links no `Menu`
-
-Arquivo: `src/components/Menu/index.tsx`
-
-### Código-fonte (arquivo atual)
+### Código-fonte atual
 
 ```tsx
-import {
-  HistoryIcon,
-  HouseIcon,
-  MoonIcon,
-  SettingsIcon,
-  SunIcon,
-} from 'lucide-react';
-import styles from './styles.module.css';
-import { useState, useEffect } from 'react';
-import { RouterLink } from '../RouterLink';
+import { useEffect, useReducer, useRef } from 'react';
+import { initialTaskState } from './initialTaskState';
+import { taskReducer } from './taskReducer';
+import { TaskContext } from './TaskContext';
+import { TimerWorkerManager } from '../../workers/TimerWorkerManager';
+import { TaskActionTypes } from './taskActions';
+import { loadBeep } from '../../utils/loadBeep';
 
-type AvailableThemes = 'dark' | 'light';
+type TaskContextProviderProps = {
+  children: React.ReactNode;
+};
 
-export function Menu() {
-  const [theme, setTheme] = useState<AvailableThemes>(() => {
-    const storageTheme =
-      (localStorage.getItem('theme') as AvailableThemes) || 'dark';
-    return storageTheme;
-  });
+export function TaskContextProvider({ children }: TaskContextProviderProps) {
+  const [state, dispatch] = useReducer(taskReducer, initialTaskState);
+  const playBeepRef = useRef<ReturnType<typeof loadBeep> | null>(null);
 
-  const nextThemeIcon = {
-    dark: <SunIcon />,
-    light: <MoonIcon />,
-  };
-
-  function handleThemeChange(
-    event: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
-  ) {
-    event.preventDefault();
-
-    setTheme(prevTheme => {
-      const nextTheme = prevTheme === 'dark' ? 'light' : 'dark';
-      return nextTheme;
-    });
-  }
+  const worker = TimerWorkerManager.getInstance();
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
+    worker.onmessage(e => {
+      const countDownSeconds = e.data;
+
+      if (countDownSeconds <= 0) {
+        if (playBeepRef.current) {
+          playBeepRef.current();
+          playBeepRef.current = null;
+        }
+        dispatch({
+          type: TaskActionTypes.COMPLETE_TASK,
+        });
+        worker.terminate();
+      } else {
+        dispatch({
+          type: TaskActionTypes.COUNT_DOWN,
+          payload: { secondsRemaining: countDownSeconds },
+        });
+      }
+    });
+  }, [worker]);
+
+  useEffect(() => {
+    if (!state.activeTask) {
+      worker.terminate();
+    }
+
+    document.title = `${state.formattedSecondsRemaining} - Chronos Pomodoro`;
+
+    worker.postMessage(state);
+  }, [worker, state]);
+
+  useEffect(() => {
+    if (state.activeTask && playBeepRef.current === null) {
+      playBeepRef.current = loadBeep();
+    } else {
+      playBeepRef.current = null;
+    }
+  }, [state.activeTask]);
 
   return (
-    <nav className={styles.menu}>
-      <RouterLink
-        className={styles.menuLink}
-        href='/'
-        aria-label='Ir para a Home'
-        title='Ir para a Home'
-      >
-        <HouseIcon />
-      </RouterLink>
-
-      <RouterLink
-        className={styles.menuLink}
-        href='/history/'
-        aria-label='Ver Histórico'
-        title='Ver Histórico'
-      >
-        <HistoryIcon />
-      </RouterLink>
-
-      <RouterLink
-        className={styles.menuLink}
-        href='/settings/'
-        aria-label='Configurações'
-        title='Configurações'
-      >
-        <SettingsIcon />
-      </RouterLink>
-
-      <a
-        className={styles.menuLink}
-        href='#'
-        aria-label='Mudar Tema'
-        title='Mudar Tema'
-        onClick={handleThemeChange}
-      >
-        {nextThemeIcon[theme]}
-      </a>
-    </nav>
+    <TaskContext.Provider value={{ state, dispatch }}>
+      {children}
+    </TaskContext.Provider>
   );
 }
 ```
 
-> O botão de tema continua como `<a>` com `onClick`, porque não é navegação de rota.
+> Observação da aula: o título da aba pode ter leve atraso visual em alguns navegadores. É normal.
 
 ---
 
-## Passo 3 — Substituir links no `Footer`
+## O que foi feito no `MainForm`
 
-Arquivo: `src/components/Footer/index.tsx`
+Arquivo: `src/components/MainForm/index.tsx`
 
-### Código-fonte
+Foi criado `lastTaskName` pegando o último item do array `state.tasks`:
+
+```ts
+const lastTaskName = state.tasks[state.tasks.length - 1]?.name || '';
+```
+
+Depois, esse valor foi ligado ao input via `defaultValue`:
 
 ```tsx
-import styles from './styles.module.css';
-import { RouterLink } from '../RouterLink';
-
-export function Footer() {
-  return (
-    <footer className={styles.footer}>
-      <RouterLink href='/about-pomodoro/'>
-        Entenda como funciona a técnica pomodoro
-      </RouterLink>
-      <RouterLink href='/'>
-        Chronos Pomodoro &copy; {new Date().getFullYear()} - Feito com 💚
-      </RouterLink>
-
-    </footer>
-  );
-}
+defaultValue={lastTaskName}
 ```
 
----
+Como o input está sendo usado de forma não-controlada (`ref`), o correto aqui é mesmo `defaultValue` (e não `value`).
 
-## Passo 4 — Substituir link na `Logo`
-
-Arquivo: `src/components/Logo/index.tsx`
-
-### Código-fonte
+### Código-fonte atual
 
 ```tsx
-import { TimerIcon } from 'lucide-react';
-import styles from './styles.module.css';
-import { RouterLink } from '../RouterLink';
+import { PlayCircleIcon, StopCircleIcon } from 'lucide-react';
+import { Cycles } from '../Cycles';
+import { DefaultButton } from '../DefaultButton';
+import { DefaultInput } from '../DefaultInput';
+import { useRef } from 'react';
+import type { TaskModel } from '../../models/TaskModel';
+import { useTaskContext } from '../../contexts/TaskContext';
+import { getNextCycle } from '../../utils/getNextCycle';
+import { getNextCycleType } from '../../utils/getNextCycleType';
+import { TaskActionTypes } from '../../contexts/TaskContext/taskActions';
+import { Tips } from '../Tips';
+import { showMessage } from '../../adapters/showMessage';
 
-export function Logo() {
+export function MainForm() {
+  const { state, dispatch } = useTaskContext();
+  const taskNameInput = useRef<HTMLInputElement>(null);
+  const lastTaskName = state.tasks[state.tasks.length - 1]?.name || '';
+
+  function handleCreateNewTask(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    showMessage.dismiss();
+
+    if (taskNameInput.current === null) return;
+
+    const taskName = taskNameInput.current.value.trim();
+
+    if (!taskName) {
+      showMessage.warn('Digite o nome da tarefa');
+      return;
+    }
+
+    const nextCycle = getNextCycle(state.currentCycle);
+    const nextCyleType = getNextCycleType(nextCycle);
+
+    const newTask: TaskModel = {
+      id: Date.now().toString(),
+      name: taskName,
+      startDate: Date.now(),
+      completeDate: null,
+      interruptDate: null,
+      duration: state.config[nextCyleType],
+      type: nextCyleType,
+    };
+
+    dispatch({ type: TaskActionTypes.START_TASK, payload: newTask });
+    showMessage.success('Tarefa iniciada');
+  }
+
+  function handleInterruptTask() {
+    showMessage.dismiss();
+    showMessage.error('Tarefa interrompida!');
+    dispatch({ type: TaskActionTypes.INTERRUPT_TASK });
+  }
+
   return (
-    <div className={styles.logo}>
-      <RouterLink className={styles.logoLink} href='/'>
-        <TimerIcon />
-        <span>Chronos</span>
-      </RouterLink>
-    </div>
+    <form onSubmit={handleCreateNewTask} className='form' action=''>
+      <div className='formRow'>
+        <DefaultInput
+          labelText='task'
+          id='meuInput'
+          type='text'
+          placeholder='Digite algo'
+          ref={taskNameInput}
+          disabled={!!state.activeTask}
+          defaultValue={lastTaskName}
+        />
+      </div>
+
+      <div className='formRow'>
+        <Tips />
+      </div>
+
+      {state.currentCycle > 0 && (
+        <div className='formRow'>
+          <Cycles />
+        </div>
+      )}
+
+      <div className='formRow'>
+        {!state.activeTask && (
+          <DefaultButton
+            aria-label='Iniciar nova tarefa'
+            title='Iniciar nova tarefa'
+            type='submit'
+            icon={<PlayCircleIcon />}
+          />
+        )}
+
+        {!!state.activeTask && (
+          <DefaultButton
+            aria-label='Interromper tarefa atual'
+            title='Interromper tarefa atual'
+            type='button'
+            color='red'
+            icon={<StopCircleIcon />}
+            onClick={handleInterruptTask}
+            key='botao_button'
+          />
+        )}
+      </div>
+    </form>
   );
 }
 ```
 
 ---
 
-## Passo 5 — Substituir links internos das páginas
+## Como validar
 
-### `AboutPomodoro`
-
-Arquivo: `src/pages/AboutPomodoro/index.tsx`
-
-Links internos agora usam `RouterLink`:
-
-```tsx
-import { Container } from '../../components/Container';
-import { GenericHtml } from '../../components/GenericHtml';
-import { Heading } from '../../components/Heading';
-import { RouterLink } from '../../components/RouterLink';
-import { MainTemplate } from '../../templates/MainTemplate';
-
-export function AboutPomodoro() {
-  return (
-    <MainTemplate>
-      <Container>
-        <GenericHtml>
-          <Heading>A Técnica Pomodoro 🍅</Heading>
-
-          {/* ... restante do conteúdo ... */}
-
-          <p>
-            Você pode configurar o tempo de foco, descanso curto e descanso
-            longo do jeito que quiser! Basta acessar a{' '}
-            <RouterLink href='/settings/'>página de configurações</RouterLink> e
-            ajustar os minutos como preferir.
-          </p>
-
-          {/* ... restante do conteúdo ... */}
-
-          <p>
-            Todas as suas tarefas e ciclos concluídos ficam salvos no{' '}
-            <RouterLink href='/history/'>histórico</RouterLink>, com status de
-            completas ou interrompidas.
-          </p>
-
-          {/* ... restante do conteúdo ... */}
-
-          <p>
-            <strong>Pronto pra focar?</strong> Bora lá{' '}
-            <RouterLink href='/'>voltar para a página inicial</RouterLink> e
-            iniciar seus Pomodoros! 🍅🚀
-          </p>
-        </GenericHtml>
-      </Container>
-    </MainTemplate>
-  );
-}
-```
-
-### `NotFound`
-
-Arquivo: `src/pages/NotFound/index.tsx`
-
-```tsx
-import { Container } from '../../components/Container';
-import { GenericHtml } from '../../components/GenericHtml';
-import { Heading } from '../../components/Heading';
-import { RouterLink } from '../../components/RouterLink';
-import { MainTemplate } from '../../templates/MainTemplate';
-
-export function NotFound() {
-  return (
-    <MainTemplate>
-      <Container>
-        <GenericHtml>
-          <Heading>404 - Página não encontrada 🚀</Heading>
-          <p>
-            Opa! Parece que a página que você está tentando acessar não existe.
-            Talvez ela tenha tirado férias, resolvido explorar o universo ou se
-            perdido em algum lugar entre dois buracos negros. 🌌
-          </p>
-          <p>
-            Mas calma, você não está perdido no espaço (ainda). Dá pra voltar em
-            segurança para a <RouterLink href='/'>página principal</RouterLink>{' '}
-            ou <RouterLink href='/history/'>para o histórico</RouterLink> — ou
-            pode ficar por aqui e fingir que achou uma página secreta que só os
-            exploradores mais legais conseguem acessar. 🧭✨
-          </p>
-        </GenericHtml>
-      </Container>
-    </MainTemplate>
-  );
-}
-```
+1. Inicie uma task.
+2. Veja o título da aba mudando para algo como `00:59 - Chronos Pomodoro`.
+3. Navegue para outra rota (ex.: About) e confirme que o título continua atualizando.
+4. Volte para Home e confirme que o nome da última task aparece no campo.
+5. Inicie outra task e veja o campo manter sempre a mais recente.
 
 ---
 
-## Checklist de validação
+## Resultado esperado para o usuário final
 
-- [ ] Clicar nos links de `Menu`, `Footer` e `Logo` navega sem reload completo.
-- [ ] Links de `AboutPomodoro` e `NotFound` funcionam com `RouterLink`.
-- [ ] Rotas ainda inexistentes (`/history/`, `/settings/`) continuam indo para `NotFound` (comportamento esperado por enquanto).
-- [ ] O timer/estado global não “reseta” ao navegar entre páginas.
-
----
-
-## Observação para próxima aula
-
-Agora que o link está centralizado, o próximo passo é manter a mesma estratégia para outras partes de navegação (ex.: variação com estado ativo, links especiais e melhorias de UX como título dinâmico da aba).
+- Mesmo fora da Home, a aba mostra que o timer continua rodando.
+- O campo da task “lembra” a última descrição, reduzindo repetição de digitação.

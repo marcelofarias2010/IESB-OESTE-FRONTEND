@@ -42,23 +42,18 @@ export function TaskContextProvider({ children }: TaskContextProviderProps) {
 
     if (!state.activeTask) {
       worker.terminate();
-      return;
     }
+
+    document.title = `${state.formattedSecondsRemaining} - Chronos Pomodoro`;
 
     worker.postMessage(state);
   }, [worker, state]);
 
   useEffect(() => {
-    if (!state.activeTask) {
+    if (state.activeTask && playBeepRef.current === null) {
+      playBeepRef.current = loadBeep();
+    } else {
       playBeepRef.current = null;
-      return;
-    }
-
-    if (playBeepRef.current === null) {
-      const play = loadBeep();
-      playBeepRef.current = play;
-      // Safari: primeiro play ainda “perto” do clique em Iniciar ajuda a destravar autoplay depois.
-      play();
     }
   }, [state.activeTask]);
 
