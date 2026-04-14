@@ -37,23 +37,30 @@ Cada linha: `key={task.id}` — não use índice do array quando houver id está
 | Status    | Depois: lógica com `completeDate`, `interruptDate`, “em progresso”, abandonada; por ora pode exibir valor cru para debug |
 | Tipo      | `task.type` (`workTime`, etc.); depois dicionário PT-BR |
 
-## Passo 5 — Atualização do `Heading` (suporte ao título + botão)
+## Passo 5 — CSS do `Heading` (layout do título + botão)
 
-Para o cabeçalho da página History (texto **History** + botão de lixeira) funcionar com o layout atual, o `Heading` permanece como componente simples que renderiza `children` dentro de `h1` com classe CSS.
+O `Heading` usa a classe `.heading` em `src/components/Heading/styles.module.css`. Esse CSS centraliza o conteúdo do `h1` em **flexbox** (título **History** + lixeira lado a lado, alinhados ao centro), com tipografia e espaçamento coerentes com o tema.
 
-Arquivo: `src/components/Heading/index.tsx`
+Arquivo: `src/components/Heading/styles.module.css`
 
-```tsx
-import styles from './styles.module.css';
-
-type HeadingProps = {
-  children: React.ReactNode;
-};
-
-export function Heading({ children }: HeadingProps) {
-  return <h1 className={styles.heading}>{children}</h1>;
+```css
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 2.4rem;
+  width: 100%;
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 700;
+  color: var(--text-default);
+  text-align: center;
+  padding: 2.4rem 0;
 }
 ```
+
+O componente `Heading/index.tsx` apenas aplica `className={styles.heading}` no `h1`; o alinhamento visual vem deste arquivo.
 
 ## Código-fonte atual — `src/pages/History/index.tsx`
 
@@ -142,5 +149,5 @@ export function History() {
 - [ ] `state.tasks.map` (ou cópia ordenada) em vez de `Array.from` mock.
 - [ ] `key={task.id}`.
 - [ ] Ordem: mais recente primeiro (`[...state.tasks].reverse()` ou equivalente).
-- [ ] `Heading` atualizado/confirmado para receber `children` e compor título + ações (lixeira).
+- [ ] `Heading/styles.module.css` com `.heading` (flex centralizado) para título + botão na History.
 - [ ] Entender que mudanças em `config` podem exigir limpar `localStorage` até ter UI de settings.
