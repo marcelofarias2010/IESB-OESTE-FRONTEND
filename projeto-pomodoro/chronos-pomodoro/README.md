@@ -212,7 +212,4 @@ Também será criado um **adapter/router wrapper** para não espalhar dependênc
 
 ---
 
-## Referência de estudo
 
-Nesta aula foi citado um minicurso gratuito de React Router v6 como base conceitual.  
-Como o v7 mantém a mesma linha de uso para o que estamos fazendo aqui, o conteúdo segue válido para estudo e revisão.
