@@ -1,161 +1,225 @@
-# Tarefa: persistir o estado no `localStorage` e reidratar com “timer zerado”
+# Tarefa: página **History** — layout, tabela responsiva e rota
 
 ## Objetivo
 
-Salvar o **`TaskStateModel` inteiro** no **`localStorage`** sempre que o estado mudar (como já fazemos com o **tema**). Ao recarregar a página, **reidratar** o estado a partir da string salva.
+Criar a página de **histórico** com estrutura visual pronta: título, botão de apagar (ícone), tabela com cabeçalhos e linhas de exemplo, CSS em **módulo**, **scroll horizontal** em telas estreitas e rota **`/history/`** no roteador. A lógica de dados (listar `state.tasks`, apagar histórico, status real) fica para aulas seguintes.
 
-**Importante:** ao voltar do `localStorage`, **não** restaurar tarefa ativa nem contador em andamento — isso evita o timer “continuar” após F5 e bugs com worker/áudio. O histórico de `tasks`, `currentCycle`, `config`, etc. permanece.
+## O que foi feito (resumo)
 
-Na narrativa do produto: se o usuário atualizar a página no meio de um ciclo, a tarefa pode ser tratada como **abandonada** (fica no histórico sem `completeDate`/`interruptDate` adequados — refinamento nas próximas aulas).
+| Item | Detalhe |
+|------|---------|
+| Página | `src/pages/History/index.tsx` — `MainTemplate`, `Container`, `Heading`, tabela dentro de wrapper |
+| Estilos | `src/pages/History/styles.module.css` — botão compacto + tabela responsiva |
+| Rotas | `src/routers/MainRouter/index.tsx` — `<Route path='/history/' element={<History />} />` |
+| Menu | `src/components/Menu/index.tsx` — link para `/history/` (já existente) |
 
-## Conceitos
+---
 
-| Ideia | O que é |
-|-------|---------|
-| **Salvar** | `localStorage.setItem('state', JSON.stringify(state))` quando `state` muda. |
-| **Reidratar** | Na inicialização do `useReducer`, ler a string, fazer `JSON.parse`, devolver objeto tipado como `TaskStateModel`. |
-| **Inicialização “preguiçosa”** | O **terceiro argumento** de `useReducer` é uma função executada **uma vez** — ideal para ler `localStorage` sem repetir trabalho a cada render. |
-| **Reset ao reidratar** | Sobrescrever `activeTask`, `secondsRemaining` e `formattedSecondsRemaining` para o app voltar “parado” após reload. |
+## Passo 1 — Registrar a rota
 
-## Passo 1 — Chave no `localStorage`
+Arquivo: `src/routers/MainRouter/index.tsx`
 
-Use uma chave fixa, por exemplo **`state`** (como no código atual). No DevTools → **Application** → **Local Storage**, você verá o JSON da aplicação.
-
-## Passo 2 — Salvar sempre que o estado mudar
-
-No `TaskContextProvider`, dentro de um `useEffect` que depende de **`[worker, state]`** (ou só `[state]`, conforme sua organização), persista:
-
-```ts
-localStorage.setItem('state', JSON.stringify(state));
-```
-
-O restante desse efeito (worker, `document.title`, etc.) pode ficar no mesmo bloco que você já usa.
-
-## Passo 3 — `useReducer` com função inicializadora (lazy init)
-
-Terceiro parâmetro de `useReducer`:
-
-```ts
-useReducer(taskReducer, initialTaskState, () => { ... });
-```
-
-Dentro da função:
-
-1. `const storageState = localStorage.getItem('state');`
-2. Se for `null`, retorne **`initialTaskState`**.
-3. Caso contrário, `JSON.parse(storageState) as TaskStateModel`.
-4. Retorne um objeto com **spread** do parseado, mas **forçando**:
-
-   - `activeTask: null`
-   - `secondsRemaining: 0`
-   - `formattedSecondsRemaining: '00:00'`
-
-Assim o reload não reativa timer nem tarefa “em progresso” de forma inconsistente.
-
-**Opcional:** envolver `JSON.parse` em `try/catch` e, em caso de JSON inválido, retornar `initialTaskState`.
-
-## Código-fonte atual — `src/contexts/TaskContext/TaskContextProvider.tsx`
+Importe a página e adicione a rota (o path deve bater com o `href` do menu):
 
 ```tsx
-import { useEffect, useReducer, useRef } from 'react';
-import { initialTaskState } from './initialTaskState';
-import { taskReducer } from './taskReducer';
-import { TaskContext } from './TaskContext';
-import { TimerWorkerManager } from '../../workers/TimerWorkerManager';
-import { TaskActionTypes } from './taskActions';
-import { loadBeep } from '../../utils/loadBeep';
-import type { TaskStateModel } from '../../models/TaskStateModel';
+import { History } from '../../pages/History';
 
-type TaskContextProviderProps = {
-  children: React.ReactNode;
-};
+// dentro de <Routes>:
+<Route path='/history/' element={<History />} />
+```
 
-export function TaskContextProvider({ children }: TaskContextProviderProps) {
-  const [state, dispatch] = useReducer(taskReducer, initialTaskState, () => {
-    const storageState = localStorage.getItem('state');
+### Trecho atual do router
 
-    if (storageState === null) return initialTaskState;
+```tsx
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router';
+import { AboutPomodoro } from '../../pages/AboutPomodoro';
+import { NotFound } from '../../pages/NotFound';
+import { Home } from '../../pages/Home';
+import { useEffect } from 'react';
+import { History } from '../../pages/History';
 
-    const parsedStorageState = JSON.parse(storageState) as TaskStateModel;
-
-    return {
-      ...parsedStorageState,
-      activeTask: null,
-      secondsRemaining: 0,
-      formattedSecondsRemaining: '00:00',
-    };
-  });
-
-  const playBeepRef = useRef<ReturnType<typeof loadBeep> | null>(null);
-
-  const worker = TimerWorkerManager.getInstance();
+function ScrollToTop() {
+  const { pathname } = useLocation();
 
   useEffect(() => {
-    worker.onmessage(e => {
-      const countDownSeconds = e.data;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [pathname]);
 
-      if (countDownSeconds <= 0) {
-        if (playBeepRef.current) {
-          playBeepRef.current();
-          playBeepRef.current = null;
-        }
-        dispatch({
-          type: TaskActionTypes.COMPLETE_TASK,
-        });
-        worker.terminate();
-      } else {
-        dispatch({
-          type: TaskActionTypes.COUNT_DOWN,
-          payload: { secondsRemaining: countDownSeconds },
-        });
-      }
-    });
-  }, [worker]);
+  return null;
+}
 
-  useEffect(() => {
-    localStorage.setItem('state', JSON.stringify(state));
-
-    if (!state.activeTask) {
-      worker.terminate();
-    }
-
-    document.title = `${state.formattedSecondsRemaining} - Chronos Pomodoro`;
-
-    worker.postMessage(state);
-  }, [worker, state]);
-
-  useEffect(() => {
-    if (state.activeTask && playBeepRef.current === null) {
-      playBeepRef.current = loadBeep();
-    } else {
-      playBeepRef.current = null;
-    }
-  }, [state.activeTask]);
-
+export function MainRouter() {
   return (
-    <TaskContext.Provider value={{ state, dispatch }}>
-      {children}
-    </TaskContext.Provider>
+    <BrowserRouter>
+      <Routes>
+        <Route path='/' element={<Home />} />
+        <Route path='/history/' element={<History />} />
+        <Route path='/about-pomodoro/' element={<AboutPomodoro />} />
+        <Route path='*' element={<NotFound />} />
+      </Routes>
+      <ScrollToTop />
+    </BrowserRouter>
   );
 }
 ```
 
+---
+
+## Passo 2 — Link no menu
+
+Arquivo: `src/components/Menu/index.tsx`
+
+Garanta `RouterLink` (ou `Link`) com `href='/history/'` e ícone de histórico — como no código atual.
+
+---
+
+## Passo 3 — Página `History`
+
+Arquivo: `src/pages/History/index.tsx`
+
+- Dois `Container`s: um com `Heading` (título + área do botão), outro com a tabela.
+- Botão: `DefaultButton` com `TrashIcon`, `color='red'`, `aria-label` e `title` para acessibilidade.
+- Tabela: `thead` com colunas **Tarefa, Duração, Data, Status, Tipo**; `tbody` com linhas geradas só para **protótipo visual** (`Array.from({ length: 20 })`).
+- **`key`:** com dados reais use o **id da tarefa**; com índice temporário, `key={index}` é aceitável só neste mock (a aula alerta para não depender de índice quando a lista for reordenável).
+
+### Código-fonte atual
+
+```tsx
+import { TrashIcon } from 'lucide-react';
+import { Container } from '../../components/Container';
+import { DefaultButton } from '../../components/DefaultButton';
+import { Heading } from '../../components/Heading';
+import { MainTemplate } from '../../templates/MainTemplate';
+
+import styles from './styles.module.css';
+
+export function History() {
+  return (
+    <MainTemplate>
+      <Container>
+        <Heading>
+          <span>History</span>
+          <span className={styles.buttonContainer}>
+            <DefaultButton
+              icon={<TrashIcon />}
+              color='red'
+              aria-label='Apagar todo o histórico'
+              title='Apagar histórico'
+            />
+          </span>
+        </Heading>
+      </Container>
+
+      <Container>
+        <div className={styles.responsiveTable}>
+          <table>
+            <thead>
+              <tr>
+                <th>Tarefa</th>
+                <th>Duração</th>
+                <th>Data</th>
+                <th>Status</th>
+                <th>Tipo</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {Array.from({ length: 20 }).map((_, index) => {
+                return (
+                  <tr key={index}>
+                    <td>Estudar</td>
+                    <td>25min</td>
+                    <td>20/04/2025 08:00</td>
+                    <td>Completa</td>
+                    <td>Foco</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Container>
+    </MainTemplate>
+  );
+}
+```
+
+---
+
+## Passo 4 — CSS modular (botão + tabela responsiva)
+
+Arquivo: `src/pages/History/styles.module.css`
+
+- **`.buttonContainer button`:** reduz largura mínima padrão do `DefaultButton` (ex.: `min-width: auto`), ajusta `padding` e tamanho do SVG — o botão de ícone não fica “largão” como o de play.
+- **`.responsiveTable`:** `overflow-x: auto` para rolagem lateral quando a tabela for mais larga que a tela (mobile).
+- **`table`:** `width: 100%`, `min-width: 64rem` para não esmagar colunas; `border-collapse: collapse`.
+- **`th` / `td`:** cores do tema (`--gray-600` / `--gray-800`), borda inferior, `text-align: left`, `padding`.
+
+### Código-fonte atual
+
+```css
+.buttonContainer button {
+  min-width: auto;
+  margin: 0;
+  padding: 1rem;
+}
+
+.buttonContainer button svg {
+  width: 2rem;
+  height: 2rem;
+}
+
+.responsiveTable {
+  overflow-x: auto;
+  border-radius: 0.8rem;
+}
+
+.responsiveTable table {
+  width: 100%;
+  min-width: 64rem;
+  font-size: 1.6rem;
+  border-collapse: collapse;
+}
+
+.responsiveTable th {
+  background-color: var(--gray-600);
+}
+
+.responsiveTable td {
+  background-color: var(--gray-800);
+}
+
+.responsiveTable th,
+.responsiveTable td {
+  border-bottom: 0.2rem solid var(--gray-700);
+  text-align: left;
+  padding: 1.6rem;
+}
+```
+
+**Confira** o `className` no JSX: `styles.responsiveTable` e `styles.buttonContainer` (nome do arquivo `styles.module.css` importado como `styles`).
+
+---
+
 ## Como validar
 
-1. Crie tarefas, altere tema, navegue — confira `localStorage.state` no DevTools.
-2. Dê **F5** com timer rodando: o contador deve **não** continuar de onde parou; lista de `tasks` e configuração devem persistir.
-3. Limpe só a chave `state` (ou todo o storage do site) e recarregue: app volta ao estado inicial sem erro.
-4. Tema salvo separadamente (`theme`) continua funcionando independente.
+1. Acesse `/history/` pelo menu ou pela URL.
+2. Em viewport estreita, a área da tabela deve rolar **horizontalmente** sem quebrar o layout inteiro da página.
+3. O botão vermelho de lixeira deve ficar visualmente **compacto** ao lado do título.
+4. Navegue entre Home e History: o `ScrollToTop` do router deve levar ao topo ao mudar de rota.
 
-## Próximos passos (fora desta tarefa)
+---
 
-- Página de **histórico** e **configurações**.
-- Marcar tarefas como **abandonadas** quando fizer sentido no modelo de negócio.
-- Botão para limpar só o estado do Pomodoro sem apagar o tema.
+## Próximas aulas (fora desta tarefa)
+
+- Popular a tabela com `state.tasks` (map real).
+- Implementar **apagar histórico** (`dispatch` + `localStorage` ou action dedicada).
+- Status: completa / interrompida / abandonada conforme regras do app.
 
 ## Checklist
 
-- [ ] `localStorage.setItem('state', JSON.stringify(state))` em efeito que reage ao `state`.
-- [ ] `useReducer` com função inicializadora lendo e parseando `state`.
-- [ ] Após parse, zerar `activeTask`, `secondsRemaining` e `formattedSecondsRemaining`.
-- [ ] Teste de F5 e de storage vazio.
+- [ ] Rota `/history/` no `MainRouter` e import de `History` de `pages/History`.
+- [ ] Menu com link para `/history/`.
+- [ ] Página com `Heading`, botão `DefaultButton` vermelho com `aria-label` e `title`.
+- [ ] Tabela dentro de `.responsiveTable` com CSS de overflow e `min-width` na `table`.
+- [ ] `styles.module.css` importado corretamente (`import styles from './styles.module.css'`).
