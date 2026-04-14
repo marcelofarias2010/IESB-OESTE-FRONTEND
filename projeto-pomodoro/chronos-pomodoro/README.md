@@ -1,194 +1,288 @@
-# Tarefa: tocar áudio ao completar o ciclo — `loadBeep`, Safari e `useRef`
+# Tarefa: notificações com React Toastify + Adapter + Container próprio
 
-## Objetivo
+## Objetivo da aula
 
-Tocar o arquivo **`src/assets/audios/gravitational_beep.mp3`** quando o contador chega a **zero** (worker manda `<= 0` → `COMPLETE_TASK`), respeitando as regras de **autoplay** dos navegadores — em especial o **Safari**, que costuma bloquear `audio.play()` se não houver vínculo com **gesto do usuário**.
+Substituir `alert()` por notificações visuais com `react-toastify`, manter o app desacoplado da biblioteca externa usando o padrão **Adapter**, e centralizar a configuração do `ToastContainer` em um componente próprio (`MessagesContainer`).
 
-## Contexto: por que não é só `new Audio().play()`?
+Com isso, a aplicação:
 
-- Em **Chrome / Edge / Firefox / Opera**, muitas vezes basta carregar e chamar `play()` depois.
-- No **Safari**, se o usuário clicou em **Iniciar**, passou o tempo e só então o código tenta `play()`, o navegador pode tratar como reprodução **sem** interação recente e **bloquear**.
-- **HTTPS:** em desenvolvimento local, o Safari pode ser mais rígido; em produção com **HTTPS** (ex.: deploy com certificado) o comportamento costuma alinhar com o que você vê nos outros navegadores.
+- mostra mensagens mais bonitas e controláveis;
+- evita espalhar dependência direta da lib em vários componentes;
+- facilita manutenção futura (se trocar de lib, muda em 1 ponto principal).
 
-Estratégia da aula: no momento em que existe **`activeTask`** (logo após o usuário iniciar o ciclo), **carregar** o áudio com `load()` e disparar um **`play()` imediato** (ainda “perto” da cadeia do clique). Isso **prepara** o mesmo elemento de áudio para um segundo `play()` no **fim** do timer, quando **não** há clique.
+---
 
-## Arquivos envolvidos
+## Passo 1 — Instalar a biblioteca
 
-| Arquivo | Papel |
-|---------|--------|
-| `src/utils/loadBeep.ts` | Importa o `.mp3` via bundler, cria `Audio`, chama `load()`, retorna função que faz `currentTime = 0` e `play().catch(...)`. |
-| `src/contexts/TaskContext/TaskContextProvider.tsx` | `useRef` guarda a função retornada por `loadBeep`; um `useEffect` depende só de `state.activeTask`; o `onmessage` do worker chama o beep antes de `COMPLETE_TASK` quando `countDownSeconds <= 0`. |
-| `src/assets/audios/gravitational_beep.mp3` | Som usado na aula (pode trocar por outro `.mp3` mantendo o import). |
+No terminal, na raiz do projeto:
 
-## Passo 1 — `loadBeep` (`src/utils/loadBeep.ts`)
-
-1. Importe o MP3 (caminho relativo a partir de `src/utils/`):
-
-   `import gravitationalBeep from '../assets/audios/gravitational_beep.mp3';`
-
-2. Dentro de `loadBeep()`:
-   - `const audio = new Audio(gravitationalBeep);`
-   - `audio.load();`
-   - **Retorne** uma função sem argumentos que:
-     - defina `audio.currentTime = 0` (para repetir o mesmo arquivo do início);
-     - chame `audio.play().catch(error => console.log('Erro ao tocar áudio', error));`
-
-Assim você separa **carregar** (e expor o “player”) de **tocar** quando quiser.
-
-### Código-fonte completo — `src/utils/loadBeep.ts`
-
-```typescript
-import gravitationalBeep from '../assets/audios/gravitational_beep.mp3';
-
-/**
- * Prepares a short notification sound for playback in the browser.
- *
- * Browsers (especially Safari) often block `HTMLMediaElement.play()` unless
- * audio was “unlocked” in a user-gesture context. This helper loads the asset
- * once and returns a zero-argument function that rewinds to the start and plays.
- *
- * @returns A function that resets `currentTime` to 0 and calls `play()`; rejects are logged.
- */
-export function loadBeep() {
-  const audio = new Audio(gravitationalBeep);
-  audio.load();
-
-  return () => {
-    audio.currentTime = 0;
-    audio.play().catch(error => console.log('Erro ao tocar áudio', error));
-  };
-}
+```bash
+npm i react-toastify
 ```
 
-## Passo 2 — Por que `useRef` e não `let` no corpo do componente?
+> Se os toasts aparecerem sem estilo base, importe também o CSS padrão da lib em um ponto global (por exemplo em `src/main.tsx`): `import 'react-toastify/dist/ReactToastify.css';`.
 
-A cada atualização de estado, o **Provider** renderiza de novo. Variáveis declaradas no corpo da função **resetam**. A função retornada por `loadBeep()` precisa **persistir** entre renders até o fim do ciclo → use **`useRef`**.
+---
 
-Tipagem sugerida:
+## Passo 2 — Criar o Adapter de mensagens
 
-```typescript
-const playBeepRef = useRef<ReturnType<typeof loadBeep> | null>(null);
+Arquivo: `src/adapters/showMessage.ts`
+
+Ideia: em vez de chamar `toast.success`, `toast.error` etc. direto nos componentes, usamos `showMessage.success`, `showMessage.error`, etc.
+
+### Código-fonte
+
+```ts
+import { toast } from 'react-toastify';
+
+export const showMessage = {
+  success: (msg: string) => toast.success(msg),
+  error: (msg: string) => toast.error(msg),
+  warn: (msg: string) => toast.warn(msg),
+  warning: (msg: string) => toast.warning(msg),
+  info: (msg: string) => toast.info(msg),
+  dismiss: () => toast.dismiss(),
+};
 ```
 
-`ReturnType<typeof loadBeep>` é o tipo da função “tocar” retornada por `loadBeep`.
+---
 
-## Passo 3 — `useEffect` só quando `activeTask` muda
+## Passo 3 — Criar o componente de container global
 
-Não use o efeito que roda a **cada segundo** (`COUNT_DOWN`) para carregar o beep — isso dispararia lógica demais e confundiria o fluxo.
+Arquivo: `src/components/MessagesContainer/index.tsx`
 
-Use **`useEffect(..., [state.activeTask])`**:
+Esse componente envolve os `children` e injeta o `ToastContainer` uma única vez para a aplicação.
 
-1. Se **não** há `activeTask`: `playBeepRef.current = null` e `return` (interrompeu ou zerou estado).
-2. Se há `activeTask` e **`playBeepRef.current === null`**:
-   - `const play = loadBeep();`
-   - `playBeepRef.current = play;`
-   - chame **`play()` uma vez** na sequência (desbloqueio Safari / “primeiro play” logo após o usuário iniciar).
-
-**Cuidado com o `else`:** não faça `if (activeTask && ref === null) { ... } else { ref = null }`, porque quando a tarefa **continua ativa** e a ref **já foi preenchida**, o `else` esvaziaria a ref no meio do ciclo. O correto é: **só** zera a ref quando **`!state.activeTask`**.
-
-## Passo 4 — Tocar de novo no `onmessage` ao completar
-
-No efeito que registra `worker.onmessage`, quando **`countDownSeconds <= 0`**:
-
-1. Se `playBeepRef.current` existir, chame `playBeepRef.current()` e depois `playBeepRef.current = null`.
-2. Em seguida `dispatch(COMPLETE_TASK)` e `worker.terminate()` (como já estava o fluxo do timer).
-
-Ordem sugerida: **som → completar estado → matar worker**.
-
-### Código-fonte completo — `src/contexts/TaskContext/TaskContextProvider.tsx`
+### Código-fonte
 
 ```tsx
-import { useEffect, useReducer, useRef } from 'react';
-import { initialTaskState } from './initialTaskState';
-import { taskReducer } from './taskReducer';
-import { TaskContext } from './TaskContext';
-import { TimerWorkerManager } from '../../workers/TimerWorkerManager';
-import { TaskActionTypes } from './taskActions';
-import { loadBeep } from '../../utils/loadBeep';
+import { Bounce, ToastContainer } from 'react-toastify';
 
-type TaskContextProviderProps = {
+type MessagesContainerProps = {
   children: React.ReactNode;
 };
 
-export function TaskContextProvider({ children }: TaskContextProviderProps) {
-  const [state, dispatch] = useReducer(taskReducer, initialTaskState);
-  const playBeepRef = useRef<ReturnType<typeof loadBeep> | null>(null);
-
-  const worker = TimerWorkerManager.getInstance();
-
-  useEffect(() => {
-    worker.onmessage(e => {
-      const countDownSeconds = e.data;
-
-      if (countDownSeconds <= 0) {
-        if (playBeepRef.current) {
-          playBeepRef.current();
-          playBeepRef.current = null;
-        }
-        dispatch({
-          type: TaskActionTypes.COMPLETE_TASK,
-        });
-        worker.terminate();
-      } else {
-        dispatch({
-          type: TaskActionTypes.COUNT_DOWN,
-          payload: { secondsRemaining: countDownSeconds },
-        });
-      }
-    });
-  }, [worker]);
-
-  useEffect(() => {
-
-    if (!state.activeTask) {
-      worker.terminate();
-      return;
-    }
-
-    worker.postMessage(state);
-  }, [worker, state]);
-
-  useEffect(() => {
-    if (!state.activeTask) {
-      playBeepRef.current = null;
-      return;
-    }
-
-    if (playBeepRef.current === null) {
-      const play = loadBeep();
-      playBeepRef.current = play;
-      // Safari: primeiro play ainda “perto” do clique em Iniciar ajuda a destravar autoplay depois.
-      play();
-    }
-  }, [state.activeTask]);
-
+export function MessagesContainer({ children }: MessagesContainerProps) {
   return (
-    <TaskContext.Provider value={{ state, dispatch }}>
+    <>
       {children}
-    </TaskContext.Provider>
+
+      <ToastContainer
+        position='top-center'
+        autoClose={10000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick={true}
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme='light'
+        transition={Bounce}
+      />
+    </>
   );
 }
 ```
 
-## Comportamento esperado
+---
 
-- Ao **iniciar** uma tarefa: carrega o áudio e toca **uma vez** (pode ser um “tu” bem curto no início do arquivo — normal no som gravitacional da aula).
-- Ao **terminar** sozinho: log de countdown chega a 0, toca de novo, estado completa, worker encerra.
-- Ao **interromper** antes do fim: `activeTask` vira `null`, ref é limpa; ao **iniciar outra** tarefa, o fluxo de carregar + primeiro `play()` repete.
+## Passo 4 — Integrar no topo da aplicação
 
-## Limpeza
+Arquivo: `src/App.tsx`
 
-Remova `console.log` de depuração (“carregando áudio”, “tocando áudio”, etc.) no código final. Para achar sobras: busca no projeto por `console.log`.
+Envolva o conteúdo principal com `MessagesContainer`.
 
-## Checklist
+### Código-fonte
 
-- [ ] `gravitational_beep.mp3` presente em `src/assets/audios/`.
-- [ ] `loadBeep` com `load()`, retorno que faz `currentTime = 0` e `play().catch(...)`.
-- [ ] `playBeepRef` com `ReturnType<typeof loadBeep> | null`.
-- [ ] Efeito com deps `[state.activeTask]` sem esvaziar a ref enquanto a tarefa segue ativa.
-- [ ] Primeiro `play()` logo após `loadBeep` ao iniciar tarefa.
-- [ ] Segundo `play()` no ramo `countDownSeconds <= 0` antes do `COMPLETE_TASK`.
+```tsx
+import { Home } from './pages/Home';
+import './styles/theme.css';
+import './styles/global.css';
+import { TaskContextProvider } from './contexts/TaskContext';
+import { MessagesContainer } from './components/MessagesContainer';
 
-## Safari e HTTPS (lembrete)
+export function App() {
+  return (
+    <TaskContextProvider>
+      <MessagesContainer>
+        <Home />
+      </MessagesContainer>
+    </TaskContextProvider>
+  );
+}
+```
 
-Teste em Safari com **HTTPS** em produção ou ambiente equivalente; em `http://localhost` algumas versões se comportam diferente. Se o som falhar só no Safari, revise se o **primeiro** `play()` ainda ocorre no fluxo imediatamente após o usuário **iniciar** a tarefa.
+---
+
+## Passo 5 — Substituir `alert` no formulário
+
+Arquivo: `src/components/MainForm/index.tsx`
+
+Troca principal:
+
+- `showMessage.warn('Digite o nome da tarefa')` no lugar de `alert`;
+- `showMessage.dismiss()` no início das ações para limpar toasts antigos;
+- toast de sucesso ao iniciar;
+- toast de erro ao interromper.
+
+### Código-fonte
+
+```tsx
+import { PlayCircleIcon, StopCircleIcon } from 'lucide-react';
+import { Cycles } from '../Cycles';
+import { DefaultButton } from '../DefaultButton';
+import { DefaultInput } from '../DefaultInput';
+import { useRef } from 'react';
+import type { TaskModel } from '../../models/TaskModel';
+import { useTaskContext } from '../../contexts/TaskContext';
+import { getNextCycle } from '../../utils/getNextCycle';
+import { getNextCycleType } from '../../utils/getNextCycleType';
+import { TaskActionTypes } from '../../contexts/TaskContext/taskActions';
+import { Tips } from '../Tips';
+import { showMessage } from '../../adapters/showMessage';
+
+export function MainForm() {
+  const { state, dispatch } = useTaskContext();
+  const taskNameInput = useRef<HTMLInputElement>(null);
+
+  function handleCreateNewTask(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    showMessage.dismiss();
+
+    if (taskNameInput.current === null) return;
+
+    const taskName = taskNameInput.current.value.trim();
+
+    if (!taskName) {
+      showMessage.warn('Digite o nome da tarefa');
+      return;
+    }
+
+    const nextCycle = getNextCycle(state.currentCycle);
+    const nextCyleType = getNextCycleType(nextCycle);
+
+    const newTask: TaskModel = {
+      id: Date.now().toString(),
+      name: taskName,
+      startDate: Date.now(),
+      completeDate: null,
+      interruptDate: null,
+      duration: state.config[nextCyleType],
+      type: nextCyleType,
+    };
+
+    dispatch({ type: TaskActionTypes.START_TASK, payload: newTask });
+    showMessage.success('Tarefa iniciada');
+  }
+
+  function handleInterruptTask() {
+    showMessage.dismiss();
+    showMessage.error('Tarefa interrompida!');
+    dispatch({ type: TaskActionTypes.INTERRUPT_TASK });
+  }
+
+  return (
+    <form onSubmit={handleCreateNewTask} className='form' action=''>
+      <div className='formRow'>
+        <DefaultInput
+          labelText='task'
+          id='meuInput'
+          type='text'
+          placeholder='Digite algo'
+          ref={taskNameInput}
+          disabled={!!state.activeTask}
+        />
+      </div>
+
+      <div className='formRow'>
+        <Tips />
+      </div>
+
+      {state.currentCycle > 0 && (
+        <div className='formRow'>
+          <Cycles />
+        </div>
+      )}
+
+      <div className='formRow'>
+        {!state.activeTask && (
+          <DefaultButton
+            aria-label='Iniciar nova tarefa'
+            title='Iniciar nova tarefa'
+            type='submit'
+            icon={<PlayCircleIcon />}
+          />
+        )}
+
+        {!!state.activeTask && (
+          <DefaultButton
+            aria-label='Interromper tarefa atual'
+            title='Interromper tarefa atual'
+            type='button'
+            color='red'
+            icon={<StopCircleIcon />}
+            onClick={handleInterruptTask}
+            key='botao_button'
+          />
+        )}
+      </div>
+    </form>
+  );
+}
+```
+
+---
+
+## Passo 6 — Ajustar tema para combinar com Toastify
+
+Arquivo: `src/styles/theme.css`
+
+Foram adicionadas variáveis CSS do Toastify dentro de `:root` e no bloco de tema claro `:root[data-theme='light']`.
+
+### Trecho relevante da aula
+
+```css
+/* 🔔 Cores do Toastify (notificações) */
+--toastify-color-light: var(--text-default);
+--toastify-color-dark: var(--text-default);
+--toastify-color-info: var(--info);
+--toastify-color-success: var(--success);
+--toastify-color-warning: var(--warning);
+--toastify-color-error: var(--error);
+--toastify-text-color-light: #0a0f1a;
+--toastify-text-color-dark: #e6e9f0;
+--toastify-color-progress-light: var(--primary);
+--toastify-color-progress-dark: var(--primary);
+```
+
+e no tema claro:
+
+```css
+/* 🔔 Toastify no modo claro */
+--toastify-text-color-light: #e6e9f0;
+--toastify-text-color-dark: #e6e9f0;
+```
+
+> O restante do arquivo mantém a estrutura completa de tokens de cor (gray, primary, links, alerts e textos), com comentários explicativos.
+
+---
+
+## Resultado esperado
+
+1. Ao tentar enviar tarefa vazia: toast de aviso (`warn`) no topo.
+2. Ao iniciar tarefa válida: toast de sucesso (`success`).
+3. Ao interromper tarefa: toast de erro (`error`).
+4. Toast pausa o tempo ao perder foco da aba (`pauseOnFocusLoss`) e ao passar mouse (`pauseOnHover`).
+5. Com troca de tema claro/escuro, o estilo do toast acompanha as variáveis definidas em `theme.css`.
+
+---
+
+## Por que usar Adapter aqui?
+
+Porque `showMessage` protege seus componentes da API externa:
+
+- hoje: `react-toastify`;
+- amanhã: qualquer outra lib.
+
+Você altera o adapter e o container, sem precisar refatorar todos os lugares que mostram mensagem.
