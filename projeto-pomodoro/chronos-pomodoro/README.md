@@ -1,67 +1,43 @@
-# Tarefa: roteamento com `react-router` v7 (sem recarregar a página)
+# Tarefa: separar o roteamento no `MainRouter` e corrigir scroll no topo
 
 ## Objetivo da aula
 
-Adicionar navegação SPA (Single Page Application) ao projeto usando **React Router v7**, evitando recarregar todos os scripts/imagens/áudios ao trocar de “página”.
+Nesta etapa vamos:
 
-Antes: links com `<a href="...">` recarregam a aplicação inteira.  
-Agora: links com `<Link to="...">` trocam apenas o componente renderizado.
-
----
-
-## Mudança importante da versão
-
-No v7, a instalação usada no curso é:
-
-```bash
-npm i react-router
-```
-
-E os imports são feitos de:
-
-```ts
-import { BrowserRouter, Routes, Route, Link } from 'react-router';
-```
-
-> No material antigo (v6), você verá `react-router-dom`.  
-> A ideia de uso é a mesma para esta aula.
+1. **Limpar o `App.tsx`**, movendo toda a configuração do React Router para um componente dedicado.
+2. Criar o `MainRouter` em `src/routers/MainRouter/`.
+3. Corrigir o problema de navegação onde a página abre no meio/final após trocar de rota.
 
 ---
 
-## Passo 1 — Definir as rotas no `App`
+## Por que fazer isso?
+
+- O `App.tsx` fica mais simples e fácil de manter.
+- Toda regra de rota fica em um lugar só.
+- Se o React Router mudar no futuro, você ajusta no router central.
+- Você já prepara o terreno para criar wrappers próprios (`AppLink`, `AppNavLink`) e evitar espalhar dependência externa no projeto inteiro.
+
+---
+
+## Passo 1 — Limpar o `App.tsx`
+
+Antes, o `App` tinha `BrowserRouter`, `Routes` e `Route` diretamente nele.  
+Agora ele só monta os contextos e chama o roteador principal.
 
 Arquivo: `src/App.tsx`
 
-Nesta etapa, o app foi envolvido com `BrowserRouter` e passou a usar `Routes` + `Route`:
-
-- `/` → `Home`
-- `/about-pomodoro/` → `AboutPomodoro`
-- `*` → `NotFound` (rota coringa para qualquer URL inválida)
-
-### Código-fonte
-
 ```tsx
-import { Home } from './pages/Home';
+import { TaskContextProvider } from './contexts/TaskContext/TaskContextProvider';
+import { MessagesContainer } from './components/MessagesContainer';
+import { MainRouter } from './routers/MainRouter';
 import './styles/theme.css';
 import './styles/global.css';
-import { TaskContextProvider } from './contexts/TaskContext';
-import { MessagesContainer } from './components/MessagesContainer';
-import { BrowserRouter, Route, Routes } from 'react-router';
-import { NotFound } from './pages/NotFound';
-import { AboutPomodoro } from './pages/AboutPomodoro';
 
 export function App() {
   return (
     <TaskContextProvider>
       <MessagesContainer>
-        <BrowserRouter>
-          <Routes>
-            <Route path='/' element={<Home />} />
-            <Route path='/about-pomodoro/' element={<AboutPomodoro />} />
-
-            <Route path='*' element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <MainRouter />
       </MessagesContainer>
     </TaskContextProvider>
   );
@@ -70,146 +46,80 @@ export function App() {
 
 ---
 
-## Passo 2 — Trocar links do menu para `Link`
+## Passo 2 — Criar `MainRouter`
 
-Arquivo: `src/components/Menu/index.tsx`
+Arquivo: `src/routers/MainRouter/index.tsx`
 
-A Home deixou de usar `<a href="/">` e passou a usar `<Link to="/">`, evitando reload.
+Aqui fica toda a configuração de rotas:
 
-### Código-fonte
+- `/` -> `Home`
+- `/about-pomodoro/` -> `AboutPomodoro`
+- `*` -> `NotFound`
+
+Também criamos um componente interno (`ScrollToTop`) para reagir à troca de URL.
 
 ```tsx
-import {
-  HistoryIcon,
-  HouseIcon,
-  MoonIcon,
-  SettingsIcon,
-  SunIcon,
-} from 'lucide-react';
-import styles from './styles.module.css';
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router';
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router';
+import { AboutPomodoro } from '../../pages/AboutPomodoro';
+import { NotFound } from '../../pages/NotFound';
+import { Home } from '../../pages/Home';
+import { useEffect } from 'react';
 
-type AvailableThemes = 'dark' | 'light';
-
-export function Menu() {
-  const [theme, setTheme] = useState<AvailableThemes>(() => {
-    const storageTheme =
-      (localStorage.getItem('theme') as AvailableThemes) || 'dark';
-    return storageTheme;
-  });
-
-  const nextThemeIcon = {
-    dark: <SunIcon />,
-    light: <MoonIcon />,
-  };
-
-  function handleThemeChange(
-    event: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
-  ) {
-    event.preventDefault();
-
-    setTheme(prevTheme => {
-      const nextTheme = prevTheme === 'dark' ? 'light' : 'dark';
-      return nextTheme;
-    });
-  }
+function ScrollToTop() {
+  const { pathname } = useLocation();
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [pathname]);
 
+  return null;
+}
+
+export function MainRouter() {
   return (
-    <nav className={styles.menu}>
-      <Link
-        className={styles.menuLink}
-        to='/'
-        aria-label='Ir para a Home'
-        title='Ir para a Home'
-      >
-        <HouseIcon />
-      </Link>
-
-      <a
-        className={styles.menuLink}
-        href='#'
-        aria-label='Ver Histórico'
-        title='Ver Histórico'
-      >
-        <HistoryIcon />
-      </a>
-
-      <a
-        className={styles.menuLink}
-        href='#'
-        aria-label='Configurações'
-        title='Configurações'
-      >
-        <SettingsIcon />
-      </a>
-
-      <a
-        className={styles.menuLink}
-        href='#'
-        aria-label='Mudar Tema'
-        title='Mudar Tema'
-        onClick={handleThemeChange}
-      >
-        {nextThemeIcon[theme]}
-      </a>
-    </nav>
+    <BrowserRouter>
+      <Routes>
+        <Route path='/' element={<Home />} />
+        <Route path='/about-pomodoro/' element={<AboutPomodoro />} />
+        <Route path='*' element={<NotFound />} />
+      </Routes>
+      <ScrollToTop />
+    </BrowserRouter>
   );
 }
 ```
 
 ---
 
-## Passo 3 — Trocar links do rodapé para `Link`
+## Ponto importante sobre `useLocation`
 
-Arquivo: `src/components/Footer/index.tsx`
+`useLocation()` **precisa** estar dentro do contexto do router (`BrowserRouter`).  
+Por isso ele está em um componente filho (`ScrollToTop`) que é renderizado dentro do `MainRouter`.
 
-Mesma ideia: usar `Link` em vez de `a` para manter SPA.
-
-### Código-fonte
-
-```tsx
-import { Link } from 'react-router';
-import styles from './styles.module.css';
-
-export function Footer() {
-  return (
-    <footer className={styles.footer}>
-      <Link to='/about-pomodoro/'>
-        Entenda como funciona a técnica pomodoro
-      </Link>
-      <Link to='/'>
-        Chronos Pomodoro &copy; {new Date().getFullYear()} - Feito com 💚
-      </Link>
-
-    </footer>
-  );
-}
-```
+Se você tentar usar `useLocation` fora desse contexto, o React Router vai lançar erro.
 
 ---
 
-## Como validar
+## Truque usado na aula: componente que não renderiza UI
 
-1. Abra a aba **Network** no DevTools.
-2. Navegue entre Home e About pelo menu/rodapé.
-3. Confirme que **não há reload completo da página** (sem recarregar bundle inteiro a cada clique).
-4. Teste uma rota inexistente (ex.: `/abc`) e confirme renderização da página `NotFound`.
+`ScrollToTop` retorna `null`, ou seja:
 
----
+- é um componente React normal;
+- pode usar hooks (`useEffect`, `useLocation`);
+- mas **não desenha nada** na tela.
 
-## Observação importante (próximas aulas)
-
-Ao trocar rotas, a página pode manter posição de rolagem (não voltar ao topo automaticamente).  
-Isso será tratado depois com uma solução própria de controle de scroll por navegação.
-
-Também será criado um **adapter/router wrapper** para não espalhar dependência direta de `react-router` por todos os componentes.
+Ele existe apenas para executar efeito colateral quando a rota muda.
 
 ---
 
+## Resultado esperado
 
+- Navegar entre Home/About/NotFound sem reload completo da aplicação.
+- Ao trocar rota, a janela volta para o topo com rolagem suave (`behavior: 'smooth'`).
+- `App.tsx` mais limpo e organizado.
+
+---
+
+## Próxima etapa (próxima aula)
+
+Criar wrappers próprios para links de navegação (ex.: `AppLink`) e parar de usar `Link` do `react-router` diretamente em vários componentes (`Menu`, `Footer`, `Logo`, `AboutPomodoro`, `NotFound`, etc.).
