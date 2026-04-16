@@ -1,64 +1,48 @@
-## Lógica de status das tasks (`getTaskStatus`)
+## Tradução do tipo de task na tabela (`taskTypeDictionary`)
 
 ### Objetivo
 
-Exibir na coluna **Status** da página `History` um texto legível para cada tarefa, garantindo que:
+Exibir na coluna **Tipo** da página `History` rótulos em **português** para cada tipo de task, em vez de mostrar as chaves internas em inglês (`workTime`, `shortBreakTime`, `longBreakTime`).
 
-- **Apenas uma task** fique como **"Em Progresso"** (a task ativa atual).
-- Tasks concluídas apareçam como **"Completa"**.
-- Tasks interrompidas apareçam como **"Interrompida"**.
-- Qualquer task que ficou para trás (sem `completeDate` e sem `interruptDate` e que não é a ativa) seja considerada **"Abandonada"**.
+### 1. Criar um dicionário de tipos
 
-### 1. Função utilitária `getTaskStatus`
-
-Criamos o arquivo `src/utils/getTaskStatus.ts` com uma função responsável por centralizar essa regra de negócio:
-
-- Recebe a `task` que será exibida na linha da tabela.
-- Recebe também a `activeTask` atual (vinda do contexto), que pode ser `null`.
-- Avalia, em ordem, os possíveis estados e retorna uma **string em português**.
-
-Implementação atual:
-
-```ts
-import type { TaskModel } from '../models/TaskModel';
-
-export function getTaskStatus(task: TaskModel, activeTask: TaskModel | null) {
-  if (task.completeDate) return 'Completa';
-  if (task.interruptDate) return 'Interrompida';
-  if (task.id === activeTask?.id) return 'Em Progresso';
-  return 'Abandonada';
-}
-```
-
-**Detalhes importantes da lógica:**
-
-- **`completeDate` definido** → a task está finalizada → status **"Completa"**.
-- **`interruptDate` definido** → a task foi parada manualmente → status **"Interrompida"**.
-- **Sem datas de completa/interrupção**, mas **`task.id === activeTask?.id`** → é a task atual em andamento → status **"Em Progresso"**.
-- Qualquer outra combinação (sem datas e não é a ativa) → a pessoa saiu/abriu outra task → status **"Abandonada"**.
-- O uso de `activeTask?.id` garante que, se `activeTask` for `null`, o acesso ao `id` não quebra o código.
-
-### 2. Uso na página `History`
-
-No arquivo `src/pages/History/index.tsx`:
-
-1. Importamos a função utilitária:
+Dentro do `map` que renderiza as tasks, criamos um pequeno dicionário (objeto) que faz o mapeamento entre o tipo salvo no modelo e o texto exibido na interface:
 
 ```tsx
-import { getTaskStatus } from '../../utils/getTaskStatus';
+{tasksNewestFirst.map(task => {
+  const taskTypeDictionary = {
+    workTime: 'Foco',
+    shortBreakTime: 'Descanso curto',
+    longBreakTime: 'Descanso longo',
+  };
+
+  return (
+    <tr key={task.id}>
+      <td>{task.name}</td>
+      <td>{task.duration}min</td>
+      <td>{formatDate(task.startDate)}</td>
+      <td>{getTaskStatus(task, state.activeTask)}</td>
+      <td>{taskTypeDictionary[task.type]}</td>
+    </tr>
+  );
+})}
 ```
 
-2. Dentro do `map` das tasks, usamos `getTaskStatus` para preencher a coluna **Status**:
+### 2. Como funciona o mapeamento
 
-```tsx
-<td>{getTaskStatus(task, state.activeTask)}</td>
-```
+- `task.type` guarda a chave interna do tipo:
+  - `workTime`
+  - `shortBreakTime`
+  - `longBreakTime`
+- O objeto `taskTypeDictionary` usa essas chaves como índices e retorna a string em português:
+  - `workTime` → **"Foco"**
+  - `shortBreakTime` → **"Descanso curto"**
+  - `longBreakTime` → **"Descanso longo"**
 
-Assim, a tabela de histórico sempre mostra um único item **"Em Progresso"** (quando houver uma task ativa) e classifica corretamente as demais como **"Completa"**, **"Interrompida"** ou **"Abandonada"**, mesmo depois de recarregar a página.
+Na célula da coluna **Tipo**, usamos `taskTypeDictionary[task.type]` para obter o rótulo correto para cada linha.
 
 ### Checklist
 
-- [ ] Arquivo `src/utils/getTaskStatus.ts` criado e exportando `getTaskStatus`.
-- [ ] Lógica de status segue a ordem: `completeDate` → `interruptDate` → `task.id === activeTask?.id` → `Abandonada`.
-- [ ] Página `History` importa `getTaskStatus`.
-- [ ] Coluna **Status** usa `getTaskStatus(task, state.activeTask)` dentro do `map`.
+- [ ] Dicionário `taskTypeDictionary` criado dentro do `map` em `History`.
+- [ ] Todas as chaves possíveis (`workTime`, `shortBreakTime`, `longBreakTime`) mapeadas.
+- [ ] Coluna **Tipo** usa `taskTypeDictionary[task.type]` em vez de exibir `task.type` diretamente.
