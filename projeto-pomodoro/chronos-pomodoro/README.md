@@ -1,45 +1,111 @@
-## Ordenação dinâmica da tabela de histórico
+## Limpar histórico com confirmação, `RESET_STATE` e lista vazia
 
 ### Objetivo
 
-Permitir reordenar a tabela da página `History` ao clicar nos cabeçalhos:
+- Ao clicar no botão de apagar histórico, pedir **confirmação** (`window.confirm`).
+- Se o usuário confirmar, **zerar o estado global** das tasks via `dispatch` com a ação `RESET_STATE`.
+- No **reducer**, fazer `RESET_STATE` retornar uma cópia do **`initialTaskState`** (estado inicial), em vez de um objeto “na mão”.
+- Como a tabela usa **estado local** (`sortTasksOptions`) derivado de `state.tasks`, usar **`useEffect`** para **reordenar** sempre que `state.tasks` mudar (inclusive após o reset).
+- Quando **não houver tasks**, não mostrar a tabela nem o botão de lixeira; exibir uma **mensagem** (parágrafo). Opcionalmente usar `style` inline para alinhamento (bônus da aula).
 
-- **Tarefa** (`name`)
-- **Duração** (`duration`)
-- **Data** (`startDate`)
+### Bônus (próxima aula)
 
-A ideia desta etapa é controlar a ordenação via estado local (`useState`), alternando a direção entre `asc` e `desc` a cada clique.
-
----
-
-### O que foi implementado
-
-1. Criado o estado `sortTasksOptions` com `useState<SortTasksOptions>`.
-2. Inicialização com função (`lazy initialization`) para já entrar com as tasks ordenadas por:
-   - `field: 'startDate'`
-   - `direction: 'desc'`
-3. Criada a função `handleSortTasks` para:
-   - receber o `field` clicado;
-   - calcular `newDirection` com toggle (`desc -> asc` e `asc -> desc`);
-   - recalcular `tasks` via `sortTasks`.
-4. Aplicado `onClick` nos `<th>` de Tarefa, Duração e Data.
-5. Aplicada classe visual `thSort` para indicar que os cabeçalhos são clicáveis.
+O `confirm` do navegador funciona, mas não é o fluxo ideal de UI. Na sequência pode-se substituir por **Toastify** (ou similar) com botões customizados e `onClose` com `reason` para simular OK/Cancelar.
 
 ---
 
-### Regras da interação
+### 1) Reducer: `RESET_STATE` → estado inicial
 
-- Ao entrar na página, a lista inicia ordenada por data mais recente.
-- Ao clicar em uma coluna ordenável:
-  - o campo de ordenação vira o campo clicado;
-  - a direção alterna entre crescente e decrescente.
-- Ao sair e voltar para a página, a ordenação volta para o padrão inicial (`startDate` + `desc`), porque o estado local é reiniciado.
+Arquivo: `src/contexts/TaskContext/taskReducer.ts`
+
+No caso `TaskActionTypes.RESET_STATE`, retornamos `{ ...initialTaskState }` para voltar ao estado padrão (tasks vazias, sem task ativa, etc.).
+
+```ts
+import type { TaskStateModel } from '../../models/TaskStateModel';
+import { formatSecondsToMinutes } from '../../utils/formatSecondsToMinutes';
+import { getNextCycle } from '../../utils/getNextCycle';
+import { initialTaskState } from './initialTaskState';
+import { TaskActionTypes, type TaskActionModel } from './taskActions';
+
+export function taskReducer(
+  state: TaskStateModel,
+  action: TaskActionModel,
+): TaskStateModel {
+  switch (action.type) {
+    case TaskActionTypes.START_TASK: {
+      const newTask = action.payload;
+      const nextCycle = getNextCycle(state.currentCycle);
+      const secondsRemaining = newTask.duration * 60;
+
+      return {
+        ...state,
+        activeTask: newTask,
+        currentCycle: nextCycle,
+        secondsRemaining,
+        formattedSecondsRemaining: formatSecondsToMinutes(secondsRemaining),
+        tasks: [...state.tasks, newTask],
+      };
+    }
+    case TaskActionTypes.INTERRUPT_TASK: {
+      return {
+        ...state,
+        activeTask: null,
+        secondsRemaining: 0,
+        formattedSecondsRemaining: '00:00',
+        tasks: state.tasks.map(task => {
+          if (state.activeTask && state.activeTask.id === task.id) {
+            return { ...task, interruptDate: Date.now() };
+          }
+          return task;
+        }),
+      };
+    }
+    case TaskActionTypes.COMPLETE_TASK: {
+      return {
+        ...state,
+        activeTask: null,
+        secondsRemaining: 0,
+        formattedSecondsRemaining: '00:00',
+        tasks: state.tasks.map(task => {
+          if (state.activeTask && state.activeTask.id === task.id) {
+            return { ...task, completeDate: Date.now() };
+          }
+          return task;
+        }),
+      };
+    }
+    case TaskActionTypes.RESET_STATE: {
+      return { ...initialTaskState };
+    }
+    case TaskActionTypes.COUNT_DOWN: {
+      return {
+        ...state,
+        secondsRemaining: action.payload.secondsRemaining,
+        formattedSecondsRemaining: formatSecondsToMinutes(
+          action.payload.secondsRemaining,
+        ),
+      };
+    }
+  }
+
+  // Sempre deve retornar o estado
+  return state;
+}
+```
 
 ---
 
-### Código completo dos arquivos modificados
+### 2) History: confirmação, `dispatch`, `useEffect` e UI vazia
 
-#### `src/pages/History/index.tsx`
+Arquivo: `src/pages/History/index.tsx`
+
+Pontos principais:
+
+- `hasTasks = state.tasks.length > 0` para controlar botão, tabela e mensagem.
+- `handleResetHistory`: se `confirm(...)` retornar `false`, sai cedo; senão `dispatch({ type: TaskActionTypes.RESET_STATE })`.
+- `useEffect` com dependência `[state.tasks]`: quando as tasks do contexto mudam, recalcula `sortTasksOptions.tasks` com `sortTasks`, mantendo `direction` e `field` do estado anterior.
+- Botão de lixeira e tabela só renderizam quando `hasTasks`.
+- Parágrafo “Ainda não existem tarefas criadas.” quando `!hasTasks`.
 
 ```tsx
 import { TrashIcon } from 'lucide-react';
@@ -53,10 +119,13 @@ import { useTaskContext } from '../../contexts/TaskContext';
 import { formatDate } from '../../utils/formatDate';
 import { getTaskStatus } from '../../utils/getTaskStatus';
 import { sortTasks, type SortTasksOptions } from '../../utils/sortTasks';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { TaskActionTypes } from '../../contexts/TaskContext/taskActions';
 
 export function History() {
-  const { state } = useTaskContext();
+  const { state, dispatch } = useTaskContext();
+  const hasTasks = state.tasks.length > 0;
+
   const [sortTasksOptions, setSortTaskOptions] = useState<SortTasksOptions>(
     () => {
       return {
@@ -66,6 +135,17 @@ export function History() {
       };
     },
   );
+
+  useEffect(() => {
+    setSortTaskOptions(prevState => ({
+      ...prevState,
+      tasks: sortTasks({
+        tasks: state.tasks,
+        direction: prevState.direction,
+        field: prevState.field,
+      }),
+    }));
+  }, [state.tasks]);
 
   function handleSortTasks({ field }: Pick<SortTasksOptions, 'field'>) {
     const newDirection = sortTasksOptions.direction === 'desc' ? 'asc' : 'desc';
@@ -81,135 +161,100 @@ export function History() {
     });
   }
 
+  function handleResetHistory() {
+    if (!confirm('Tem certeza')) return;
+
+    dispatch({ type: TaskActionTypes.RESET_STATE });
+  }
+
   return (
     <MainTemplate>
       <Container>
         <Heading>
           <span>History</span>
-          <span className={styles.buttonContainer}>
-            <DefaultButton
-              icon={<TrashIcon />}
-              color='red'
-              aria-label='Apagar todo o histórico'
-              title='Apagar histórico'
-            />
-          </span>
+          {hasTasks && (
+            <span className={styles.buttonContainer}>
+              <DefaultButton
+                icon={<TrashIcon />}
+                color='red'
+                aria-label='Apagar todo o histórico'
+                title='Apagar histórico'
+                onClick={handleResetHistory}
+              />
+            </span>
+          )}
         </Heading>
       </Container>
 
       <Container>
-        <div className={styles.responsiveTable}>
-          <table>
-            <thead>
-              <tr>
-                <th
-                  onClick={() => handleSortTasks({ field: 'name' })}
-                  className={styles.thSort}
-                >
-                  Tarefa ↕
-                </th>
-                <th
-                  onClick={() => handleSortTasks({ field: 'duration' })}
-                  className={styles.thSort}
-                >
-                  Duração ↕
-                </th>
-                <th
-                  onClick={() => handleSortTasks({ field: 'startDate' })}
-                  className={styles.thSort}
-                >
-                  Data ↕
-                </th>
-                <th>Status</th>
-                <th>Tipo</th>
-              </tr>
-            </thead>
+        {hasTasks && (
+          <div className={styles.responsiveTable}>
+            <table>
+              <thead>
+                <tr>
+                  <th
+                    onClick={() => handleSortTasks({ field: 'name' })}
+                    className={styles.thSort}
+                  >
+                    Tarefa ↕
+                  </th>
+                  <th
+                    onClick={() => handleSortTasks({ field: 'duration' })}
+                    className={styles.thSort}
+                  >
+                    Duração ↕
+                  </th>
+                  <th
+                    onClick={() => handleSortTasks({ field: 'startDate' })}
+                    className={styles.thSort}
+                  >
+                    Data ↕
+                  </th>
+                  <th>Status</th>
+                  <th>Tipo</th>
+                </tr>
+              </thead>
 
-            <tbody>
-              {sortTasksOptions.tasks.map(task => {
-                const taskTypeDictionary = {
-                  workTime: 'Foco',
-                  shortBreakTime: 'Descanso curto',
-                  longBreakTime: 'Descanso longo',
-                };
-
-                return (
-                  <tr key={task.id}>
-                    <td>{task.name}</td>
-                    <td>{task.duration}min</td>
-                    <td>{formatDate(task.startDate)}</td>
-                    <td>{getTaskStatus(task, state.activeTask)}</td>
-                    <td>{taskTypeDictionary[task.type]}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+              <tbody>
+                {sortTasksOptions.tasks.map(task => {
+                  const taskTypeDictionary = {
+                    workTime: 'Foco',
+                    shortBreakTime: 'Descanso curto',
+                    longBreakTime: 'Descanso longo',
+                  };
+                  return (
+                    <tr key={task.id}>
+                      <td>{task.name}</td>
+                      <td>{task.duration}min</td>
+                      <td>{formatDate(task.startDate)}</td>
+                      <td>{getTaskStatus(task, state.activeTask)}</td>
+                      <td>{taskTypeDictionary[task.type]}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {!hasTasks && (
+          <p style={{ textAlign: 'center', fontWeight: 'bold' }}>
+            Ainda não existem tarefas criadas.
+          </p>
+        )}
       </Container>
     </MainTemplate>
   );
 }
 ```
 
-#### `src/pages/History/styles.module.css`
-
-```css
-.buttonContainer button {
-  min-width: auto;
-  margin: 0;
-  padding: 1rem;
-}
-
-.buttonContainer button svg {
-  width: 2rem;
-  height: 2rem;
-}
-
-.responsiveTable {
-  overflow-x: auto;
-  border-radius: 0.8rem;
-}
-
-.responsiveTable table {
-  width: 100%;
-  min-width: 64rem;
-  font-size: 1.6rem;
-  border-collapse: collapse;
-}
-
-.responsiveTable th {
-  background-color: var(--gray-600);
-}
-
-.responsiveTable td {
-  background-color: var(--gray-800);
-}
-
-.responsiveTable th,
-.responsiveTable td {
-  border-bottom: 0.2rem solid var(--gray-700);
-  text-align: left;
-  padding: 1.6rem;
-}
-
-.thSort {
-  cursor: pointer;
-  transition: all 0.1s ease-in-out;
-}
-
-.thSort:hover {
-  filter: brightness(80%);
-}
-```
+**Comportamento do `confirm`:** OK → `true` (executa o `dispatch`); Cancelar → `false` (retorna antes e não apaga).
 
 ---
 
-### Checklist da etapa
+### Checklist
 
-- [ ] Estado `sortTasksOptions` criado com `useState<SortTasksOptions>`.
-- [ ] Inicialização padrão: `field = startDate` e `direction = desc`.
-- [ ] Função `handleSortTasks` criada com `Pick<SortTasksOptions, 'field'>`.
-- [ ] Toggle de direção implementado (`asc`/`desc`).
-- [ ] Cabeçalhos de Tarefa, Duração e Data com `onClick`.
-- [ ] Classe `thSort` aplicada para feedback visual de coluna clicável.
+- [ ] `taskReducer`: `RESET_STATE` retorna `{ ...initialTaskState }`.
+- [ ] `History`: `dispatch` e `TaskActionTypes.RESET_STATE` importados.
+- [ ] `handleResetHistory` com `confirm` antes do `dispatch`.
+- [ ] `useEffect` observando `state.tasks` para sincronizar `sortTasksOptions.tasks`.
+- [ ] `hasTasks` controla tabela, botão de apagar e mensagem de lista vazia.
