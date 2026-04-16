@@ -1,148 +1,43 @@
-## Ordenação inicial das tasks com `sortTasks`
+## Ordenação dinâmica da tabela de histórico
 
 ### Objetivo
 
-Ordenar a lista de tarefas exibida na página `History` pela data de início (`startDate`) em ordem decrescente, trazendo as tarefas mais recentes para o topo da tabela.
+Permitir reordenar a tabela da página `History` ao clicar nos cabeçalhos:
 
-### Contexto da aula
+- **Tarefa** (`name`)
+- **Duração** (`duration`)
+- **Data** (`startDate`)
 
-Em JavaScript puro seria possível ordenar diretamente com `array.sort((a, b) => b.startDate - a.startDate)`.  
-Mas como a próxima etapa do projeto vai permitir trocar campo/direção da ordenação (nome, duração, data, asc/desc), foi criado um utilitário genérico para centralizar essa lógica: `sortTasks`.
-
----
-
-### 1) Criar utilitário genérico `sortTasks`
-
-Arquivo: `src/utils/sortTasks.ts`
-
-A função recebe um objeto com opções:
-
-- `tasks`: lista de tarefas;
-- `field` (opcional): campo de `TaskModel` usado na comparação;
-- `direction` (opcional): `'asc'` ou `'desc'`.
-
-Valores padrão usados:
-
-- `field = 'startDate'`
-- `direction = 'desc'`
-- `tasks = []`
-
-Com isso, se você chamar apenas `sortTasks({ tasks })`, ele já ordena por data de início da mais nova para a mais antiga.
-
-### 2) Regras implementadas dentro de `sortTasks`
-
-A função trata cenários importantes para manter a ordenação estável:
-
-- **Nulos**
-  - se os dois valores forem `null`, mantém a ordem (`return 0`);
-  - se apenas um for `null`, o `null` vai para o final.
-- **Números**
-  - compara por subtração (`a - b` para asc / `b - a` para desc).
-- **Strings**
-  - compara com `localeCompare` (`A -> Z` no asc / `Z -> A` no desc).
-- **Demais tipos**
-  - mantém a ordem (`return 0`).
-
-Além disso, usa `return [...tasks].sort(...)` para criar cópia e evitar mutação direta do array original vindo do estado.
+A ideia desta etapa é controlar a ordenação via estado local (`useState`), alternando a direção entre `asc` e `desc` a cada clique.
 
 ---
 
-### 3) Uso no `History`
+### O que foi implementado
 
-Arquivo: `src/pages/History/index.tsx`
-
-1. Importar a função:
-
-```tsx
-import { sortTasks } from '../../utils/sortTasks';
-```
-
-2. Gerar a lista ordenada:
-
-```tsx
-const sortedTaks = sortTasks({ tasks: state.tasks });
-```
-
-3. Renderizar a tabela com `sortedTaks.map(...)` no lugar de `state.tasks.map(...)`.
-
-Resultado prático: tarefas novas aparecem primeiro, e ao iniciar uma nova task ela sobe para o topo naturalmente.
+1. Criado o estado `sortTasksOptions` com `useState<SortTasksOptions>`.
+2. Inicialização com função (`lazy initialization`) para já entrar com as tasks ordenadas por:
+   - `field: 'startDate'`
+   - `direction: 'desc'`
+3. Criada a função `handleSortTasks` para:
+   - receber o `field` clicado;
+   - calcular `newDirection` com toggle (`desc -> asc` e `asc -> desc`);
+   - recalcular `tasks` via `sortTasks`.
+4. Aplicado `onClick` nos `<th>` de Tarefa, Duração e Data.
+5. Aplicada classe visual `thSort` para indicar que os cabeçalhos são clicáveis.
 
 ---
 
-### 4) Código completo dos arquivos da etapa
+### Regras da interação
 
-#### `src/utils/sortTasks.ts`
+- Ao entrar na página, a lista inicia ordenada por data mais recente.
+- Ao clicar em uma coluna ordenável:
+  - o campo de ordenação vira o campo clicado;
+  - a direção alterna entre crescente e decrescente.
+- Ao sair e voltar para a página, a ordenação volta para o padrão inicial (`startDate` + `desc`), porque o estado local é reiniciado.
 
-```ts
-// Função genérica para ordenar o array de tasks
-//
-// O método .sort() recebe uma função que compara dois itens (a, b) e deve retornar:
-// - Um número NEGATIVO (-1) se "a" deve vir antes de "b".
-// - Um número POSITIVO (1) se "a" deve vir depois de "b".
-// - ZERO (0) se não precisa mudar a ordem.
-//
-// A função cuida de:
-// 1. Se o valor for null, joga pro final da lista.
-// 2. Se for número, ordena numericamente (asc ou desc).
-// 3. Se for string, ordena alfabeticamente (asc ou desc).
-//
-// O spread [...tasks] cria uma cópia do array original para não alterar ele direto.
+---
 
-import type { TaskModel } from '../models/TaskModel';
-
-// Define os parâmetros esperados pela função
-export type SortTasksOptions = {
-  tasks: TaskModel[]; // Lista de tarefas que será ordenada
-  direction?: 'asc' | 'desc'; // Direção da ordenação: crescente ou decrescente (opcional)
-  field?: keyof TaskModel; // Qual campo da tarefa será usado para ordenar (opcional)
-};
-
-export function sortTasks({
-  field = 'startDate', // Se o campo não for informado, usamos 'startDate' como padrão
-  direction = 'desc', // Se a direção não for informada, usamos 'desc' (decrescente)
-  tasks = [], // Se nenhuma lista for passada, usamos uma lista vazia
-}: SortTasksOptions): TaskModel[] {
-  return [...tasks].sort((a, b) => {
-    // Pegamos o valor da propriedade escolhida (ex: startDate) em cada tarefa
-    const aValue = a[field];
-    const bValue = b[field];
-
-    // --- TRATANDO VALORES NULOS ---
-
-    // Se os dois forem nulos, mantemos a ordem atual
-    if (aValue === null && bValue === null) return 0;
-
-    // Se apenas o primeiro for nulo, ele vai para o final
-    if (aValue === null) return 1;
-
-    // Se apenas o segundo for nulo, ele vai para o final
-    if (bValue === null) return -1;
-
-    // --- COMPARAÇÃO NUMÉRICA ---
-
-    // Se os dois valores forem números, fazemos uma subtração para ordenar
-    if (typeof aValue === 'number' && typeof bValue === 'number') {
-      return direction === 'asc'
-        ? aValue - bValue // Ex: 1, 2, 3...
-        : bValue - aValue; // Ex: 3, 2, 1...
-    }
-
-    // --- COMPARAÇÃO DE STRINGS ---
-
-    // Se os dois valores forem textos, usamos localeCompare para comparar em ordem alfabética
-    if (typeof aValue === 'string' && typeof bValue === 'string') {
-      return direction === 'asc'
-        ? aValue.localeCompare(bValue) // A -> Z
-        : bValue.localeCompare(aValue); // Z -> A
-    }
-
-    // --- CASOS NÃO TRATADOS ---
-
-    // Se não for nem número, nem string, nem null, não alteramos a ordem
-    return 0;
-  });
-}
-```
+### Código completo dos arquivos modificados
 
 #### `src/pages/History/index.tsx`
 
@@ -157,11 +52,34 @@ import styles from './styles.module.css';
 import { useTaskContext } from '../../contexts/TaskContext';
 import { formatDate } from '../../utils/formatDate';
 import { getTaskStatus } from '../../utils/getTaskStatus';
-import { sortTasks } from '../../utils/sortTasks';
+import { sortTasks, type SortTasksOptions } from '../../utils/sortTasks';
+import { useState } from 'react';
 
 export function History() {
   const { state } = useTaskContext();
-  const sortedTaks = sortTasks({ tasks: state.tasks });
+  const [sortTasksOptions, setSortTaskOptions] = useState<SortTasksOptions>(
+    () => {
+      return {
+        tasks: sortTasks({ tasks: state.tasks }),
+        field: 'startDate',
+        direction: 'desc',
+      };
+    },
+  );
+
+  function handleSortTasks({ field }: Pick<SortTasksOptions, 'field'>) {
+    const newDirection = sortTasksOptions.direction === 'desc' ? 'asc' : 'desc';
+
+    setSortTaskOptions({
+      tasks: sortTasks({
+        direction: newDirection,
+        tasks: sortTasksOptions.tasks,
+        field,
+      }),
+      direction: newDirection,
+      field,
+    });
+  }
 
   return (
     <MainTemplate>
@@ -184,16 +102,31 @@ export function History() {
           <table>
             <thead>
               <tr>
-                <th>Tarefa</th>
-                <th>Duração</th>
-                <th>Data</th>
+                <th
+                  onClick={() => handleSortTasks({ field: 'name' })}
+                  className={styles.thSort}
+                >
+                  Tarefa ↕
+                </th>
+                <th
+                  onClick={() => handleSortTasks({ field: 'duration' })}
+                  className={styles.thSort}
+                >
+                  Duração ↕
+                </th>
+                <th
+                  onClick={() => handleSortTasks({ field: 'startDate' })}
+                  className={styles.thSort}
+                >
+                  Data ↕
+                </th>
                 <th>Status</th>
                 <th>Tipo</th>
               </tr>
             </thead>
 
             <tbody>
-              {sortedTaks.map(task => {
+              {sortTasksOptions.tasks.map(task => {
                 const taskTypeDictionary = {
                   workTime: 'Foco',
                   shortBreakTime: 'Descanso curto',
@@ -219,18 +152,64 @@ export function History() {
 }
 ```
 
+#### `src/pages/History/styles.module.css`
+
+```css
+.buttonContainer button {
+  min-width: auto;
+  margin: 0;
+  padding: 1rem;
+}
+
+.buttonContainer button svg {
+  width: 2rem;
+  height: 2rem;
+}
+
+.responsiveTable {
+  overflow-x: auto;
+  border-radius: 0.8rem;
+}
+
+.responsiveTable table {
+  width: 100%;
+  min-width: 64rem;
+  font-size: 1.6rem;
+  border-collapse: collapse;
+}
+
+.responsiveTable th {
+  background-color: var(--gray-600);
+}
+
+.responsiveTable td {
+  background-color: var(--gray-800);
+}
+
+.responsiveTable th,
+.responsiveTable td {
+  border-bottom: 0.2rem solid var(--gray-700);
+  text-align: left;
+  padding: 1.6rem;
+}
+
+.thSort {
+  cursor: pointer;
+  transition: all 0.1s ease-in-out;
+}
+
+.thSort:hover {
+  filter: brightness(80%);
+}
+```
+
 ---
 
-### Observação da próxima aula
+### Checklist da etapa
 
-Nesta etapa a ordenação está fixa no padrão inicial (data decrescente).  
-Na sequência, a ideia é evoluir para ordenação por clique nos cabeçalhos da tabela (campo + direção com toggle `asc`/`desc`), o que exige controle adicional de estado.
-
-### Checklist
-
-- [ ] `src/utils/sortTasks.ts` criado com opções `tasks`, `field`, `direction`.
-- [ ] Defaults definidos para `field = 'startDate'` e `direction = 'desc'`.
-- [ ] Comparação com tratamento de `null`, `number` e `string`.
-- [ ] Cópia defensiva com `[...]` antes de ordenar.
-- [ ] `History` usa `sortTasks({ tasks: state.tasks })`.
-- [ ] Renderização da tabela feita com `sortedTaks.map(...)`.
+- [ ] Estado `sortTasksOptions` criado com `useState<SortTasksOptions>`.
+- [ ] Inicialização padrão: `field = startDate` e `direction = desc`.
+- [ ] Função `handleSortTasks` criada com `Pick<SortTasksOptions, 'field'>`.
+- [ ] Toggle de direção implementado (`asc`/`desc`).
+- [ ] Cabeçalhos de Tarefa, Duração e Data com `onClick`.
+- [ ] Classe `thSort` aplicada para feedback visual de coluna clicável.
