@@ -1,71 +1,64 @@
-## Prática — Formatação de datas com `date-fns`
+## Lógica de status das tasks (`getTaskStatus`)
 
 ### Objetivo
 
-Exibir na coluna **Data** da página **History** uma string legível (dia/mês/ano e hora:minuto) a partir do **timestamp** numérico salvo em cada tarefa (`task.startDate`), em vez de mostrar o número bruto ou um formato difícil de ler.
+Exibir na coluna **Status** da página `History` um texto legível para cada tarefa, garantindo que:
 
-### Por que `date-fns`
+- **Apenas uma task** fique como **"Em Progresso"** (a task ativa atual).
+- Tasks concluídas apareçam como **"Completa"**.
+- Tasks interrompidas apareçam como **"Interrompida"**.
+- Qualquer task que ficou para trás (sem `completeDate` e sem `interruptDate` e que não é a ativa) seja considerada **"Abandonada"**.
 
-Dá para formatar com JavaScript puro (`Date`, `toLocaleString`, etc.), mas a biblioteca **[date-fns](https://date-fns.org/)** é leve, focada em funções puras e muito usada em produção para formatar datas, somar/subtrair intervalos e outras operações. Aqui usamos só **`format`**.
+### 1. Função utilitária `getTaskStatus`
 
-### 1. Instalar a dependência
+Criamos o arquivo `src/utils/getTaskStatus.ts` com uma função responsável por centralizar essa regra de negócio:
 
-Instale como dependência de **produção** (não `dev`):
+- Recebe a `task` que será exibida na linha da tabela.
+- Recebe também a `activeTask` atual (vinda do contexto), que pode ser `null`.
+- Avalia, em ordem, os possíveis estados e retorna uma **string em português**.
 
-```bash
-npm install date-fns
-```
-
-No `package.json`, deve aparecer algo como `"date-fns": "^4.x.x"` em `dependencies`.
-
-### 2. Utilitário `formatDate`
-
-Crie o arquivo `src/utils/formatDate.ts` com uma função que:
-
-1. Recebe um **`number`**: o timestamp em milissegundos (como o armazenado em `task.startDate`).
-2. Converte para `Date` com `new Date(timestamp)`.
-3. Retorna uma string formatada com `format` importado de `date-fns`.
-
-**Padrão de formatação usado no projeto:** `dd/MM/yyyy HH:mm`
-
-- `dd` — dia com dois dígitos  
-- `MM` — **mês** (M maiúsculo no padrão do `date-fns`)  
-- `yyyy` — ano com quatro dígitos  
-- `HH` — hora em 24h  
-- `mm` — **minutos** (m minúsculo)
-
-Cuidado na documentação do `date-fns`: **M maiúsculo = mês**, **m minúsculo = minuto**. Confira os tokens em [Format · date-fns](https://date-fns.org/docs/format).
-
-Código de referência (alinhado ao repositório atual):
+Implementação atual:
 
 ```ts
-import { format } from 'date-fns';
+import type { TaskModel } from '../models/TaskModel';
 
-export function formatDate(timestamp: number) {
-  const date = new Date(timestamp);
-  return format(date, 'dd/MM/yyyy HH:mm');
+export function getTaskStatus(task: TaskModel, activeTask: TaskModel | null) {
+  if (task.completeDate) return 'Completa';
+  if (task.interruptDate) return 'Interrompida';
+  if (task.id === activeTask?.id) return 'Em Progresso';
+  return 'Abandonada';
 }
 ```
 
-### 3. Usar na página History
+**Detalhes importantes da lógica:**
 
-Em `src/pages/History/index.tsx`:
+- **`completeDate` definido** → a task está finalizada → status **"Completa"**.
+- **`interruptDate` definido** → a task foi parada manualmente → status **"Interrompida"**.
+- **Sem datas de completa/interrupção**, mas **`task.id === activeTask?.id`** → é a task atual em andamento → status **"Em Progresso"**.
+- Qualquer outra combinação (sem datas e não é a ativa) → a pessoa saiu/abriu outra task → status **"Abandonada"**.
+- O uso de `activeTask?.id` garante que, se `activeTask` for `null`, o acesso ao `id` não quebra o código.
 
-1. Importe o utilitário: `import { formatDate } from '../../utils/formatDate';`
-2. Na célula da coluna **Data**, troque qualquer exibição direta do timestamp por:
+### 2. Uso na página `History`
+
+No arquivo `src/pages/History/index.tsx`:
+
+1. Importamos a função utilitária:
 
 ```tsx
-<td>{formatDate(task.startDate)}</td>
+import { getTaskStatus } from '../../utils/getTaskStatus';
 ```
 
-Assim a tabela mostra datas no padrão brasileiro com hora, por exemplo `25/03/2025 08:09`.
+2. Dentro do `map` das tasks, usamos `getTaskStatus` para preencher a coluna **Status**:
+
+```tsx
+<td>{getTaskStatus(task, state.activeTask)}</td>
+```
+
+Assim, a tabela de histórico sempre mostra um único item **"Em Progresso"** (quando houver uma task ativa) e classifica corretamente as demais como **"Completa"**, **"Interrompida"** ou **"Abandonada"**, mesmo depois de recarregar a página.
 
 ### Checklist
 
-- [ ] `date-fns` instalado e listado em `dependencies`.
-- [ ] `src/utils/formatDate.ts` criado com `format` e padrão `dd/MM/yyyy HH:mm`.
-- [ ] History importa `formatDate` e usa `formatDate(task.startDate)` na coluna Data.
-
-### Referências
-
-- [date-fns — documentação](https://date-fns.org/) (instalação, `format`, tokens de data/hora)
+- [ ] Arquivo `src/utils/getTaskStatus.ts` criado e exportando `getTaskStatus`.
+- [ ] Lógica de status segue a ordem: `completeDate` → `interruptDate` → `task.id === activeTask?.id` → `Abandonada`.
+- [ ] Página `History` importa `getTaskStatus`.
+- [ ] Coluna **Status** usa `getTaskStatus(task, state.activeTask)` dentro do `map`.
