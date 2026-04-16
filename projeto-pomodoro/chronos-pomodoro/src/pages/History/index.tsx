@@ -8,11 +8,11 @@ import styles from './styles.module.css';
 import { useTaskContext } from '../../contexts/TaskContext';
 import { formatDate } from '../../utils/formatDate';
 import { getTaskStatus } from '../../utils/getTaskStatus';
+import { sortTasks } from '../../utils/sortTasks';
 
 export function History() {
   const { state } = useTaskContext();
-  /** Mais recente primeiro (última criada no topo). */
-  const tasksNewestFirst = [...state.tasks].reverse();
+  const sortedTaks = sortTasks({ tasks: state.tasks });
 
   return (
     <MainTemplate>
@@ -44,7 +44,7 @@ export function History() {
             </thead>
 
             <tbody>
-              {tasksNewestFirst.map(task => {
+              {sortedTaks.map(task => {
                 const taskTypeDictionary = {
                   workTime: 'Foco',
                   shortBreakTime: 'Descanso curto',
