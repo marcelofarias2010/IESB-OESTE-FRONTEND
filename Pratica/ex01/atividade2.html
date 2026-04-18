@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechStore | Vitrine Digital</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="page-wrapper">
+        <header class="main-header">
+            <div class="logo">TECHSTORE</div>
+            <div class="cart-icon">
+                🛒<span id="count">0</span>
+            </div>
+        </header>
+
+        <section class="hero">
+            <div class="hero-content">
+                <h1>As melhores ofertas de tecnologia</h1>
+            </div>
+        </section>
+
+        <main class="container">
+            <h2 class="section-title">Nossos Produtos</h2>
+            <section class="product-grid" id="vitrine">
+                </section>
+        </main>
+
+        <footer class="main-footer">
+            <p>&copy; 2026 TechStore. Todos os direitos reservados.</p>
+            <div class="social-links">
+                <a href="#">Instagram</a> | <a href="#">LinkedIn</a> | <a href="#">Facebook</a>
+            </div>
+        </footer >
+    </div>
+
+    <script>
+        const produtos = [
+            { id: 1, nome: "Smartphone Premium", preco: 5000, desc: 4299, img: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=400&q=80" },
+            { id: 2, nome: "Macbook Air M2", preco: 12000, desc: 9899, img: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=400&q=80" },
+            { id: 3, nome: "Headset Gamer", preco: 800, desc: 549, img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=400&q=80" },
+            { id: 4, nome: "Smartwatch v9", preco: 2500, desc: 1900, img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=400&q=80" },
+            { id: 5, nome: "Monitor 4K", preco: 3500, desc: 2999, img: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=400&q=80" },
+            { id: 6, nome: "Teclado Mecânico", preco: 600, desc: 450, img: "https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?auto=format&fit=crop&w=400&q=80" }
+        ];
+
+        function ComponenteCard(p) {
+            // Usando a tag <article> conforme solicitado na anatomia do card
+            return `
+                <article class="product-card">
+                    <img src="${p.img}" alt="${p.nome}" class="product-img">
+                    <h3 class="product-name">${p.nome}</h3>
+                    <div class="prices">
+                        <span class="old-p">R$ ${p.preco},00</span>
+                        <span class="new-p">R$ ${p.desc},00</span>
+                    </div>
+                    <button class="btn-add" onclick="adicionar()">Adicionar ao Carrinho</button>
+                </article>
+            `;
+        }
+
+        document.getElementById('vitrine').innerHTML = produtos.map(p => ComponenteCard(p)).join('');
+
+        let total = 0;
+        function adicionar() {
+            total++;
+            document.getElementById('count').innerText = total;
+        }
+    </script>
+</body>
+</html>
