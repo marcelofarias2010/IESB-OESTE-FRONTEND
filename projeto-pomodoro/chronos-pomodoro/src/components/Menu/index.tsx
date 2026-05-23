@@ -1,17 +1,22 @@
 import {
   HistoryIcon,
   HouseIcon,
+  LogOutIcon,
   MoonIcon,
   SettingsIcon,
   SunIcon,
 } from 'lucide-react';
 import styles from './styles.module.css';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import { RouterLink } from '../RouterLink';
+import { useAuth } from '../../contexts/AuthContext/useAuth';
 
 type AvailableThemes = 'dark' | 'light';
 
 export function Menu() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [theme, setTheme] = useState<AvailableThemes>(() => {
     const storageTheme =
       (localStorage.getItem('theme') as AvailableThemes) || 'dark';
@@ -39,11 +44,17 @@ export function Menu() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  function handleLogout(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    logout();
+    navigate('/login/', { replace: true });
+  }
+
   return (
     <nav className={styles.menu}>
       <RouterLink
         className={styles.menuLink}
-        href='/'
+        href='/home/'
         aria-label='Ir para a Home'
         title='Ir para a Home'
       >
@@ -77,6 +88,16 @@ export function Menu() {
       >
         {nextThemeIcon[theme]}
       </a>
+
+      <button
+        type='button'
+        className={styles.menuLink}
+        aria-label='Sair da conta'
+        title='Sair da conta'
+        onClick={handleLogout}
+      >
+        <LogOutIcon />
+      </button>
     </nav>
   );
 }

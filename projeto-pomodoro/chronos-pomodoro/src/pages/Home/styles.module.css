@@ -1,0 +1,11 @@
+/* Saudação no topo da home (abaixo do menu). */
+.welcome {
+  width: 100%;
+  margin: 0;
+  padding: 1.6rem 0 0.4rem;
+  font-size: clamp(1.4rem, 2.8vw, 2rem);
+  font-weight: 600;
+  color: var(--text-default);
+  text-align: center;
+  line-height: 1.3;
+}

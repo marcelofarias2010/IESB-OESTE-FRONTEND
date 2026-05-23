@@ -117,7 +117,7 @@ export function AboutPomodoro() {
 
           <p>
             <strong>Pronto pra focar?</strong> Bora lá{' '}
-            <RouterLink href='/'>voltar para a página inicial</RouterLink> e
+            <RouterLink href='/home/'>voltar para a página inicial</RouterLink> e
             iniciar seus Pomodoros! 🍅🚀
           </p>
 

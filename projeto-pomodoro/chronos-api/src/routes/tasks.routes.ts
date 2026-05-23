@@ -16,8 +16,11 @@ function serializeTask(
   };
 }
 
-tasksRouter.get('/', async (_req, res) => {
+tasksRouter.get('/', async (req, res) => {
+  const userId = req.userId!;
+
   const tasks = await prisma.task.findMany({
+    where: { userId },
     orderBy: { startDate: 'desc' },
   });
 
@@ -25,6 +28,7 @@ tasksRouter.get('/', async (_req, res) => {
 });
 
 tasksRouter.post('/', async (req, res) => {
+  const userId = req.userId!;
   const { id, name, duration, type, startDate } = req.body as {
     id: string;
     name: string;
@@ -38,18 +42,31 @@ tasksRouter.post('/', async (req, res) => {
   }
 
   const task = await prisma.task.create({
-    data: { id, name, duration, type, startDate: BigInt(startDate) },
+    data: {
+      id,
+      userId,
+      name,
+      duration,
+      type,
+      startDate: BigInt(startDate),
+    },
   });
 
   return res.status(201).json(serializeTask(task));
 });
 
 tasksRouter.patch('/:id/complete', async (req, res) => {
+  const userId = req.userId!;
   const { id } = req.params;
   const { completeDate } = req.body as { completeDate: number };
 
   if (!Number.isInteger(completeDate)) {
     return res.status(400).json({ message: 'completeDate inválido' });
+  }
+
+  const existing = await prisma.task.findFirst({ where: { id, userId } });
+  if (!existing) {
+    return res.status(404).json({ message: 'Tarefa não encontrada' });
   }
 
   const task = await prisma.task.update({
@@ -61,11 +78,17 @@ tasksRouter.patch('/:id/complete', async (req, res) => {
 });
 
 tasksRouter.patch('/:id/interrupt', async (req, res) => {
+  const userId = req.userId!;
   const { id } = req.params;
   const { interruptDate } = req.body as { interruptDate: number };
 
   if (!Number.isInteger(interruptDate)) {
     return res.status(400).json({ message: 'interruptDate inválido' });
+  }
+
+  const existing = await prisma.task.findFirst({ where: { id, userId } });
+  if (!existing) {
+    return res.status(404).json({ message: 'Tarefa não encontrada' });
   }
 
   const task = await prisma.task.update({
@@ -76,7 +99,8 @@ tasksRouter.patch('/:id/interrupt', async (req, res) => {
   return res.json(serializeTask(task));
 });
 
-tasksRouter.delete('/', async (_req, res) => {
-  await prisma.task.deleteMany();
+tasksRouter.delete('/', async (req, res) => {
+  const userId = req.userId!;
+  await prisma.task.deleteMany({ where: { userId } });
   return res.status(204).send();
 });

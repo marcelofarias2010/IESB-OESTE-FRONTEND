@@ -1,5 +1,6 @@
 import type { TaskModel } from '../models/TaskModel';
 import type { TaskStateModel } from '../models/TaskStateModel';
+import { AUTH_TOKEN_STORAGE_KEY } from './authConstants';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333';
 
@@ -18,15 +19,34 @@ function normalizeTask(task: ApiTask): TaskModel {
   };
 }
 
+async function parseErrorMessage(response: Response): Promise<string> {
+  const text = await response.text();
+  if (!text) return `Erro ${response.status}`;
+  try {
+    const data = JSON.parse(text) as { message?: string };
+    return typeof data.message === 'string' ? data.message : text;
+  } catch {
+    return text;
+  }
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+  const headers = new Headers(options?.headers);
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...options,
+    headers,
   });
 
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `API error: ${response.status}`);
+    throw new Error(await parseErrorMessage(response));
   }
 
   if (response.status === 204) return undefined as T;
