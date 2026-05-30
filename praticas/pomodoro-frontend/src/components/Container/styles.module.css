@@ -1,0 +1,12 @@
+/* Centraliza o conteúdo na largura da viewport e limita a largura máxima. */
+.container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 0 1.6rem;
+}
+
+.content {
+  width: 100%;
+  max-width: 112rem;
+}
