@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String    @id @default(uuid())
+  name             String
+  email            String    @unique
+  passwordHash     String
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  createdAt        DateTime  @default(now())
+
+  settings         Settings?
+  tasks            Task[]
+}
+
+model Settings {
+  id             Int    @id @default(autoincrement())
+  workTime       Int    @default(25)
+  shortBreakTime Int    @default(5)
+  longBreakTime  Int    @default(15)
+  userId         String @unique
+  user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Task {
+  id            String    @id
+  name          String
+  duration      Int
+  type          String
+  startDate     DateTime
+  completeDate  DateTime?
+  interruptDate DateTime?
+  createdAt     DateTime  @default(now())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

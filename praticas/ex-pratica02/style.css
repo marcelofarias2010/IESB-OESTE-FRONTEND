@@ -1,0 +1,237 @@
+@import url('https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400..900;1,400..900&display=swap');
+* 
+{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+  background: url("./image/plano\ de\ fundo.jpg") no-repeat center center/cover;
+  color: white;
+}
+
+
+
+.header {
+  background: linear-gradient(90deg, #5f00ff, #8e2de2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 40px;
+}
+
+.logo img {
+  width: 150px;
+  height: auto;
+}
+
+.cart {
+  font-size: 22px;
+  position: relative;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.cart:hover {
+  transform: scale(1.2);
+}
+
+.cart-count {
+  background: red;
+  border-radius: 50%;
+  padding: 3px 7px;
+  font-size: 12px;
+  position: absolute;
+  top: -10px;
+  right: -15px;
+}
+
+
+
+.hero {
+  height: 350px;
+  background: url("./image/3b1d7c4d-1248-4109-87c1-70a3972f3c2e-removebg-preview.png") no-repeat center center/cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+}
+
+.hero h1 {
+  font-size: 50px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 0 15px rgba(0,0,0,0.8);
+}
+
+.hero h1 {
+  font-size: 50px;
+  font-weight: bold;
+  text-shadow: 0 0 10px #8e2de2;
+}
+
+
+
+.promo-bar {
+  background: #d9d9d9;
+  text-align: center;
+  padding: 15px;
+  color: black;
+  font-weight: bold;
+  margin: 20px auto;
+  width: 80%;
+  border-radius: 10px;
+}
+
+
+
+.products-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
+  padding: 40px 80px;
+}
+
+
+
+.card {
+  background: #0e4d92;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  transition: 0.3s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  padding: 2px;
+  background: linear-gradient(45deg,#00e5ff,#8e2de2,#00e5ff);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: 0.3s;
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+/* HOVER CARD */
+
+.card:hover {
+  transform: translateY(-10px) scale(1.03);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+}
+
+
+.card img {
+  width: 100%;
+  height: 120px;
+  object-fit: contain;
+  margin-bottom: 10px;
+  transition: 0.3s;
+}
+
+.card:hover img {
+  transform: scale(1.1);
+}
+
+
+
+.card h3 {
+  font-family: "Alegreya", serif;
+  font-optical-sizing: auto;
+  font-weight: weight ;
+  font-style: normal;
+}
+
+
+
+.old-price {
+  text-decoration: line-through;
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.new-price {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #00e5ff;
+}
+
+
+
+.card button {
+  background: linear-gradient(90deg,#00c6ff,#0072ff);
+  border: none;
+  padding: 10px;
+  color: white;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  width: 100%;
+  transition: 0.3s;
+}
+
+.card button:hover {
+  transform: scale(1.05);
+  background: linear-gradient(90deg,#8e2de2,#4a00e0);
+}
+
+
+
+.footer {
+  background: linear-gradient(90deg, #5f00ff, #8e2de2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 40px;
+}
+
+.footer-left img {
+  width: 120px;
+  height: auto;
+}
+
+.footer-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.footer-right p {
+  font-size: 13px;
+  font-weight: bold;
+}
+
+
+
+.payment-icons {
+  display: flex;
+  gap: 8px;
+}
+
+.payment-icons img {
+  width: 30px;
+  transition: 0.3s;
+}
+
+.payment-icons img:hover {
+  transform: scale(1.2);
+}
